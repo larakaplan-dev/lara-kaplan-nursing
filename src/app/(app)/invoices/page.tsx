@@ -27,6 +27,7 @@ export default function InvoicesPage() {
     queryKey: ['invoices-all', statusFilter],
     queryFn: () =>
       fetch(`/api/invoices${statusFilter !== 'all' ? `?status=${statusFilter}` : ''}`).then(r => r.json()),
+    staleTime: 30_000,
   })
 
   const invoices = data?.invoices || []

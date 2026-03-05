@@ -5,6 +5,12 @@ import { logAudit } from '@/lib/audit'
 
 const UUID = z.string().uuid()
 
+const UpdateInvoiceSchema = z.object({
+  status: z.enum(['draft', 'sent', 'paid']).optional(),
+  notes: z.string().nullable().optional(),
+  invoice_date: z.string().optional(),
+})
+
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = createAdminClient()
   const { id } = await params
@@ -36,9 +42,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!UUID.safeParse(id).success) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
   const body = await req.json()
 
+  const parsed = UpdateInvoiceSchema.safeParse(body)
+  if (!parsed.success) return NextResponse.json({ error: z.flattenError(parsed.error) }, { status: 400 })
+
   const { data, error } = await supabase
     .from('invoices')
-    .update(body)
+    .update(parsed.data)
     .eq('id', id)
     .select()
     .single()

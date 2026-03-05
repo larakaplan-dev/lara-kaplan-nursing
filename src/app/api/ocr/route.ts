@@ -59,6 +59,7 @@ export async function POST(req: NextRequest) {
       `https://vision.googleapis.com/v1/files:annotate?key=${apiKey}`,
       {
         method: 'POST',
+        signal: AbortSignal.timeout(55_000),
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           requests: [{
@@ -98,6 +99,7 @@ export async function POST(req: NextRequest) {
       `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`,
       {
         method: 'POST',
+        signal: AbortSignal.timeout(30_000),
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           requests: [{

@@ -40,29 +40,16 @@ export async function POST(req: NextRequest) {
 
   const { service_lines, vaccine_lines, ...invoiceData } = body
 
-  // Insert invoice (trigger assigns invoice_number)
+  // Atomic creation via DB function — wraps header + line inserts in a single transaction
   const { data: invoice, error: invErr } = await supabase
-    .from('invoices')
-    .insert([{ ...invoiceData, invoice_number: '' }])
-    .select()
+    .rpc('create_invoice_with_lines', {
+      p_invoice: invoiceData,
+      p_service_lines: service_lines ?? [],
+      p_vaccine_lines: vaccine_lines ?? [],
+    })
     .single()
 
   if (invErr) return NextResponse.json({ error: invErr.message }, { status: 500 })
-
-  // Insert line items
-  if (service_lines?.length) {
-    const { error } = await supabase.from('invoice_service_lines').insert(
-      service_lines.map((l: Record<string, unknown>, i: number) => ({ ...l, invoice_id: invoice.id, sort_order: i }))
-    )
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-
-  if (vaccine_lines?.length) {
-    const { error } = await supabase.from('invoice_vaccine_lines').insert(
-      vaccine_lines.map((l: Record<string, unknown>, i: number) => ({ ...l, invoice_id: invoice.id, sort_order: i }))
-    )
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  }
 
   await logAudit(supabase, 'CREATE', 'invoices', invoice.id,
     `${invoice.invoice_number} · ${invoice.patient_name}`)

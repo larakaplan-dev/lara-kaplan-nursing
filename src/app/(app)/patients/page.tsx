@@ -23,6 +23,7 @@ export default function PatientsPage() {
       fetch(
         `/api/patients?search=${encodeURIComponent(debouncedSearch)}&limit=100&archived=${showArchived}`
       ).then(r => r.json()),
+    staleTime: 30_000,
   })
 
   const handleSearch = (val: string) => {
