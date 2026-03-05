@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase/client'
+import { PRACTICE } from '@/lib/practiceConfig'
 
 const nav = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -111,7 +112,7 @@ export function Sidebar() {
 
         {/* Footer */}
         <div className="px-3 py-4 border-t border-white/10 space-y-3">
-          <p className="text-white/40 text-xs px-2">Practice No. {process.env.NEXT_PUBLIC_PRACTICE_NUMBER ?? '0648949'}</p>
+          <p className="text-white/40 text-xs px-2">Practice No. {PRACTICE.number}</p>
           <button
             onClick={handleSignOut}
             className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white transition-colors"
