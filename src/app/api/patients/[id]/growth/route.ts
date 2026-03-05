@@ -3,6 +3,8 @@ import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { logAudit } from '@/lib/audit'
 
+const UUID = z.string().uuid()
+
 const CreateGrowthSchema = z.object({
   measurement_date: z.string().min(1, 'measurement_date is required'),
 })
@@ -10,6 +12,7 @@ const CreateGrowthSchema = z.object({
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = createAdminClient()
   const { id } = await params
+  if (!UUID.safeParse(id).success) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
 
   const { data, error } = await supabase
     .from('growth_entries')
@@ -24,6 +27,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = createAdminClient()
   const { id } = await params
+  if (!UUID.safeParse(id).success) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
   const body = await req.json()
 
   const parsed = CreateGrowthSchema.safeParse(body)
@@ -48,10 +52,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = createAdminClient()
   const { id } = await params
+  if (!UUID.safeParse(id).success) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
   const { searchParams } = new URL(req.url)
   const entryId = searchParams.get('entryId')
 
   if (!entryId) return NextResponse.json({ error: 'entryId required' }, { status: 400 })
+  if (!UUID.safeParse(entryId).success) return NextResponse.json({ error: 'Invalid entryId' }, { status: 400 })
 
   const { error } = await supabase.from('growth_entries').delete().eq('id', entryId)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

@@ -14,6 +14,7 @@ import { formatZAR, formatDate } from '@/lib/utils'
 import { toast } from 'sonner'
 import type { Invoice } from '@/types'
 import type { InvoicePDFData } from '@/components/invoices/InvoicePDF/InvoiceDocument'
+import { BANKING } from '@/lib/practiceConfig'
 
 const PDFDownloadButton = dynamic(() => import('@/components/invoices/InvoiceForm/PDFDownloadButton'), { ssr: false })
 
@@ -202,7 +203,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
               <span>Total Due</span><span className="text-teal-900">{formatZAR(invoice.grand_total_cents)}</span>
             </div>
             <p className="text-xs text-muted-foreground pt-1">
-              FNB · Lara Kaplan Nursing · 62744358369 · Branch 250655
+              {BANKING.bank} · {BANKING.accountName} · {BANKING.accountNumber} · Branch {BANKING.branchCode}
             </p>
           </div>
         </div>

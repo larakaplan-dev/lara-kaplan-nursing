@@ -1,6 +1,7 @@
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
 import { format } from 'date-fns'
 import type { InvoiceServiceLineForm, InvoiceVaccineLineForm } from '@/types'
+import { PRACTICE, BANKING } from '@/lib/practiceConfig'
 
 const TEAL = '#0f4c5c'
 const TEAL_LIGHT = '#d0eaed'
@@ -81,12 +82,12 @@ export function InvoiceDocument({ data }: { data: InvoicePDFData }) {
         {/* Header */}
         <View style={s.header}>
           <View>
-            <Text style={s.practiceName}>{process.env.NEXT_PUBLIC_PRACTICE_NAME ?? 'Lara Kaplan'}</Text>
+            <Text style={s.practiceName}>{PRACTICE.name}</Text>
             <Text style={s.practiceDetail}>Registered Nurse and Midwife</Text>
-            <Text style={s.practiceDetail}>Practice No. {process.env.NEXT_PUBLIC_PRACTICE_NUMBER ?? '0648949'}</Text>
-            <Text style={s.practiceDetail}>{process.env.NEXT_PUBLIC_PRACTICE_ADDRESS ?? '96 William Road, Norwood'}</Text>
-            <Text style={s.practiceDetail}>Tel: {process.env.NEXT_PUBLIC_PRACTICE_PHONE ?? '082 412 9135'}</Text>
-            <Text style={s.practiceDetail}>{process.env.NEXT_PUBLIC_PRACTICE_EMAIL ?? 'sisterlarak@outlook.com'}</Text>
+            <Text style={s.practiceDetail}>Practice No. {PRACTICE.number}</Text>
+            <Text style={s.practiceDetail}>{PRACTICE.address}</Text>
+            <Text style={s.practiceDetail}>Tel: {PRACTICE.phone}</Text>
+            <Text style={s.practiceDetail}>{PRACTICE.email}</Text>
           </View>
           <View>
             <Text style={s.invoiceTitle}>INVOICE</Text>
@@ -194,17 +195,17 @@ export function InvoiceDocument({ data }: { data: InvoicePDFData }) {
         {/* Banking */}
         <View style={s.bankingSection}>
           <Text style={s.bankingTitle}>Payment Details — EFT</Text>
-          <View style={s.bankRow}><Text style={s.bankLabel}>Account Name:</Text><Text style={s.bankValue}>{process.env.NEXT_PUBLIC_BANK_ACCOUNT_NAME ?? 'Lara Kaplan Nursing'}</Text></View>
-          <View style={s.bankRow}><Text style={s.bankLabel}>Bank:</Text><Text style={s.bankValue}>{process.env.NEXT_PUBLIC_BANK_NAME ?? 'FNB'}</Text></View>
-          <View style={s.bankRow}><Text style={s.bankLabel}>Account No.:</Text><Text style={s.bankValue}>{process.env.NEXT_PUBLIC_BANK_ACCOUNT_NUMBER ?? '62744358369'}</Text></View>
-          <View style={s.bankRow}><Text style={s.bankLabel}>Branch Code:</Text><Text style={s.bankValue}>{process.env.NEXT_PUBLIC_BANK_BRANCH_CODE ?? '250655'}</Text></View>
+          <View style={s.bankRow}><Text style={s.bankLabel}>Account Name:</Text><Text style={s.bankValue}>{BANKING.accountName}</Text></View>
+          <View style={s.bankRow}><Text style={s.bankLabel}>Bank:</Text><Text style={s.bankValue}>{BANKING.bank}</Text></View>
+          <View style={s.bankRow}><Text style={s.bankLabel}>Account No.:</Text><Text style={s.bankValue}>{BANKING.accountNumber}</Text></View>
+          <View style={s.bankRow}><Text style={s.bankLabel}>Branch Code:</Text><Text style={s.bankValue}>{BANKING.branchCode}</Text></View>
           <View style={s.bankRow}><Text style={s.bankLabel}>Reference:</Text><Text style={s.bankValue}>{data.invoiceNumber} / {data.patientName}</Text></View>
         </View>
 
         {/* Footer */}
         <View style={s.footer} fixed>
           <Text style={s.footerText}>
-            {process.env.NEXT_PUBLIC_PRACTICE_NAME ?? 'Lara Kaplan'}, Registered Nurse and Midwife · Practice No. {process.env.NEXT_PUBLIC_PRACTICE_NUMBER ?? '0648949'} · {process.env.NEXT_PUBLIC_PRACTICE_PHONE ?? '082 412 9135'} · {process.env.NEXT_PUBLIC_PRACTICE_EMAIL ?? 'sisterlarak@outlook.com'}
+            {PRACTICE.name}, Registered Nurse and Midwife · Practice No. {PRACTICE.number} · {PRACTICE.phone} · {PRACTICE.email}
           </Text>
         </View>
       </Page>

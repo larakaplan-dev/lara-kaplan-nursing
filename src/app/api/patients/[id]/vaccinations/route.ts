@@ -3,6 +3,8 @@ import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { logAudit } from '@/lib/audit'
 
+const UUID = z.string().uuid()
+
 const CreateVaccinationSchema = z.object({
   vaccine_name: z.string().min(1, 'vaccine_name is required'),
   administered_date: z.string().min(1, 'administered_date is required'),
@@ -11,6 +13,7 @@ const CreateVaccinationSchema = z.object({
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = createAdminClient()
   const { id } = await params
+  if (!UUID.safeParse(id).success) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
 
   const { data, error } = await supabase
     .from('vaccination_records')
@@ -25,6 +28,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = createAdminClient()
   const { id } = await params
+  if (!UUID.safeParse(id).success) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
   const body = await req.json()
 
   const parsed = CreateVaccinationSchema.safeParse(body)
@@ -49,10 +53,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = createAdminClient()
   const { id } = await params
+  if (!UUID.safeParse(id).success) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
   const { searchParams } = new URL(req.url)
   const recordId = searchParams.get('recordId')
 
   if (!recordId) return NextResponse.json({ error: 'recordId required' }, { status: 400 })
+  if (!UUID.safeParse(recordId).success) return NextResponse.json({ error: 'Invalid recordId' }, { status: 400 })
 
   const { error } = await supabase.from('vaccination_records').delete().eq('id', recordId)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

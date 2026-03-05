@@ -1,10 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { extractAllFields } from '@/lib/ocr/fieldExtractor'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { logAudit } from '@/lib/audit'
 
 export async function POST(req: NextRequest) {
   const apiKey = process.env.GOOGLE_CLOUD_VISION_API_KEY
   if (!apiKey) {
     return NextResponse.json({ error: 'Google Vision API key not configured' }, { status: 500 })
+  }
+
+  // Rate limiting: enforce a daily cap on Google Vision API calls
+  const supabase = createAdminClient()
+  const todayStart = new Date()
+  todayStart.setHours(0, 0, 0, 0)
+  const { count } = await supabase
+    .from('audit_log')
+    .select('*', { count: 'exact', head: true })
+    .eq('table_name', 'ocr_calls')
+    .gte('performed_at', todayStart.toISOString())
+  const dailyLimit = parseInt(process.env.OCR_DAILY_LIMIT || '20')
+  if ((count ?? 0) >= dailyLimit) {
+    return NextResponse.json(
+      { error: `Daily OCR limit of ${dailyLimit} scans reached. Try again tomorrow.` },
+      { status: 429 }
+    )
   }
 
   const formData = await req.formData()
@@ -67,6 +86,9 @@ export async function POST(req: NextRequest) {
       .join('\n')
     const extracted = extractAllFields(rawText)
 
+    await logAudit(supabase, 'CREATE', 'ocr_calls', crypto.randomUUID(),
+      `${file.name} · ${Math.round(file.size / 1024)}KB · PDF`)
+
     return NextResponse.json({ rawText, ...extracted })
   } else {
     // Image file (jpg, png, etc.)
@@ -94,6 +116,9 @@ export async function POST(req: NextRequest) {
     const visionData = await visionRes.json()
     const rawText = visionData.responses?.[0]?.fullTextAnnotation?.text || ''
     const extracted = extractAllFields(rawText)
+
+    await logAudit(supabase, 'CREATE', 'ocr_calls', crypto.randomUUID(),
+      `${file.name} · ${Math.round(file.size / 1024)}KB · image`)
 
     return NextResponse.json({ rawText, ...extracted })
   }
