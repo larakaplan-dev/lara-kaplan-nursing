@@ -13,6 +13,7 @@ import {
   X,
   LogOut,
   ShieldCheck,
+  Settings,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase/client'
@@ -24,6 +25,7 @@ const nav = [
   { href: '/invoices', label: 'Invoices', icon: FileText },
   { href: '/ocr', label: 'Scan Form', icon: ScanLine },
   { href: '/audit-log', label: 'Audit Log', icon: ShieldCheck },
+  { href: '/admin', label: 'Settings', icon: Settings },
 ]
 
 export function Sidebar() {

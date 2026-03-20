@@ -10,9 +10,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
-import { Plus, CheckCircle2, Circle, Trash2 } from 'lucide-react'
+import { Plus, CheckCircle2, Circle, Trash2, Pencil } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import type { VaccinationRecord, VaccineCatalog, VaccinationFormData } from '@/types'
 
@@ -27,11 +27,13 @@ export function VaccinationsTab({ patientId }: { patientId: string }) {
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [selectedVaccine, setSelectedVaccine] = useState<VaccineCatalog | null>(null)
+  const [editingRecord, setEditingRecord] = useState<VaccinationRecord | null>(null)
   const queryClient = useQueryClient()
   const { register, handleSubmit, reset, setValue, watch } = useForm<VaccinationFormData>()
 
   const ageGroupVal = watch('age_group_label')
   const siteVal = watch('site')
+  const vaccineIdVal = watch('vaccine_id')
 
   const { data: vaccsData } = useQuery<{ records: VaccinationRecord[] }>({
     queryKey: ['vaccinations', patientId],
@@ -53,7 +55,36 @@ export function VaccinationsTab({ patientId }: { patientId: string }) {
     return acc
   }, {} as Record<string, VaccinationRecord[]>)
 
+  const openAdd = () => {
+    reset({ administered_date: format(new Date(), 'yyyy-MM-dd') })
+    setSelectedVaccine(null)
+    setEditingRecord(null)
+    setOpen(true)
+  }
+
+  const onEdit = (record: VaccinationRecord) => {
+    setEditingRecord(record)
+    reset({
+      vaccine_id:        record.vaccine_id ?? '',
+      vaccine_name:      record.vaccine_name,
+      age_group_label:   record.age_group_label ?? '',
+      administered_date: record.administered_date,
+      batch_number:      record.batch_number ?? '',
+      expiry_date:       record.expiry_date ?? '',
+      site:              record.site ?? '',
+      nappi_code:        record.nappi_code ?? '',
+      price_cents:       record.price_cents?.toString() ?? '',
+    })
+    setSelectedVaccine(record.vaccine_id ? vaccines.find(v => v.id === record.vaccine_id) ?? null : null)
+    setOpen(true)
+  }
+
   const onSelectVaccine = (id: string) => {
+    if (id === 'custom') {
+      setSelectedVaccine(null)
+      setValue('vaccine_id', '')
+      return
+    }
     const v = vaccines.find(v => v.id === id)
     if (v) {
       setSelectedVaccine(v)
@@ -64,28 +95,43 @@ export function VaccinationsTab({ patientId }: { patientId: string }) {
     }
   }
 
-  const onAdd = async (formData: VaccinationFormData) => {
+  const onSubmit = async (formData: VaccinationFormData) => {
     setSaving(true)
     try {
       const body = {
-        vaccine_id: formData.vaccine_id || null,
-        vaccine_name: formData.vaccine_name,
-        age_group_label: formData.age_group_label || null,
+        vaccine_id:        formData.vaccine_id || null,
+        vaccine_name:      formData.vaccine_name,
+        age_group_label:   formData.age_group_label || null,
         administered_date: formData.administered_date,
-        batch_number: formData.batch_number || null,
-        expiry_date: formData.expiry_date || null,
-        site: formData.site || null,
-        nappi_code: formData.nappi_code || null,
-        price_cents: formData.price_cents ? parseInt(formData.price_cents) : null,
+        batch_number:      formData.batch_number || null,
+        expiry_date:       formData.expiry_date || null,
+        site:              formData.site || null,
+        nappi_code:        formData.nappi_code || null,
+        price_cents:       formData.price_cents ? parseInt(formData.price_cents) : null,
       }
-      const res = await fetch(`/api/patients/${patientId}/vaccinations`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
-      })
-      if (!res.ok) throw new Error((await res.json()).error)
-      toast.success('Vaccination recorded')
+
+      if (editingRecord) {
+        const res = await fetch(`/api/patients/${patientId}/vaccinations`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ recordId: editingRecord.id, ...body }),
+        })
+        if (!res.ok) throw new Error((await res.json()).error)
+        toast.success('Vaccination updated')
+      } else {
+        const res = await fetch(`/api/patients/${patientId}/vaccinations`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        })
+        if (!res.ok) throw new Error((await res.json()).error)
+        toast.success('Vaccination recorded')
+      }
+
       queryClient.invalidateQueries({ queryKey: ['vaccinations', patientId] })
       reset()
       setSelectedVaccine(null)
+      setEditingRecord(null)
       setOpen(false)
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Error')
@@ -103,6 +149,15 @@ export function VaccinationsTab({ patientId }: { patientId: string }) {
     }
   }
 
+  const handleDialogClose = (v: boolean) => {
+    setOpen(v)
+    if (!v) {
+      setEditingRecord(null)
+      setSelectedVaccine(null)
+      reset()
+    }
+  }
+
   const groupsWithRecords = AGE_GROUPS.filter(g => grouped[g]?.length > 0)
   const emptyGroups = AGE_GROUPS.filter(g => grouped[g]?.length === 0)
 
@@ -110,88 +165,86 @@ export function VaccinationsTab({ patientId }: { patientId: string }) {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-sm font-semibold">Vaccination Records</h3>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm">
-              <Plus className="w-4 h-4 mr-1" /> Record Vaccine
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Record Vaccination</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit(onAdd)} className="space-y-3 mt-2">
+        <Button size="sm" onClick={openAdd}>
+          <Plus className="w-4 h-4 mr-1" /> Record Vaccine
+        </Button>
+      </div>
+
+      <Dialog open={open} onOpenChange={handleDialogClose}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingRecord ? 'Edit Vaccination' : 'Record Vaccination'}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 mt-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Vaccine <span className="text-destructive">*</span></Label>
+              <Select value={vaccineIdVal || undefined} onValueChange={onSelectVaccine}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select vaccine…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {vaccines.map(v => (
+                    <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
+                  ))}
+                  <SelectItem value="custom">Other (enter manually)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {(!selectedVaccine) && (
               <div className="space-y-1.5">
-                <Label className="text-xs">Vaccine <span className="text-destructive">*</span></Label>
-                <Select onValueChange={onSelectVaccine}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select vaccine…" />
-                  </SelectTrigger>
+                <Label className="text-xs">Vaccine Name</Label>
+                <Input {...register('vaccine_name', { required: true })} placeholder="Vaccine name" />
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Age Group</Label>
+                <Select value={ageGroupVal} onValueChange={v => setValue('age_group_label', v)}>
+                  <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
                   <SelectContent>
-                    {vaccines.map(v => (
-                      <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
-                    ))}
-                    <SelectItem value="custom">Other (enter manually)</SelectItem>
+                    {AGE_GROUPS.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
-
-              {(!selectedVaccine) && (
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Vaccine Name</Label>
-                  <Input {...register('vaccine_name', { required: true })} placeholder="Vaccine name" />
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Age Group</Label>
-                  <Select value={ageGroupVal} onValueChange={v => setValue('age_group_label', v)}>
-                    <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
-                    <SelectContent>
-                      {AGE_GROUPS.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Date Given <span className="text-destructive">*</span></Label>
-                  <Input {...register('administered_date', { required: true })} type="date"
-                    defaultValue={format(new Date(), 'yyyy-MM-dd')} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Batch Number</Label>
-                  <Input {...register('batch_number')} placeholder="Batch #" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Expiry Date</Label>
-                  <Input {...register('expiry_date')} type="date" />
-                </div>
-                <div className="col-span-2 space-y-1.5">
-                  <Label className="text-xs">Site</Label>
-                  <Select value={siteVal} onValueChange={v => setValue('site', v)}>
-                    <SelectTrigger><SelectValue placeholder="Injection site…" /></SelectTrigger>
-                    <SelectContent>
-                      {SITES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">NAPPI Code</Label>
-                  <Input {...register('nappi_code')} placeholder="NAPPI" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Price (cents)</Label>
-                  <Input {...register('price_cents')} type="number" placeholder="e.g. 75000" />
-                </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Date Given <span className="text-destructive">*</span></Label>
+                <Input {...register('administered_date', { required: true })} type="date" />
               </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Batch Number</Label>
+                <Input {...register('batch_number')} placeholder="Batch #" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Expiry Date</Label>
+                <Input {...register('expiry_date')} type="date" />
+              </div>
+              <div className="col-span-2 space-y-1.5">
+                <Label className="text-xs">Site</Label>
+                <Select value={siteVal} onValueChange={v => setValue('site', v)}>
+                  <SelectTrigger><SelectValue placeholder="Injection site…" /></SelectTrigger>
+                  <SelectContent>
+                    {SITES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">NAPPI Code</Label>
+                <Input {...register('nappi_code')} placeholder="NAPPI" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Price (cents)</Label>
+                <Input {...register('price_cents')} type="number" placeholder="e.g. 75000" />
+              </div>
+            </div>
 
-              <Button type="submit" disabled={saving} className="w-full">
-                {saving ? 'Saving…' : 'Record Vaccination'}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+            <Button type="submit" disabled={saving} className="w-full">
+              {saving ? 'Saving…' : editingRecord ? 'Save Changes' : 'Record Vaccination'}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Recorded vaccinations by age group */}
       {groupsWithRecords.length > 0 && (
@@ -224,9 +277,14 @@ export function VaccinationsTab({ patientId }: { patientId: string }) {
                         <td className="px-4 py-2 text-muted-foreground">{r.expiry_date ? formatDate(r.expiry_date) : '—'}</td>
                         <td className="px-4 py-2 text-muted-foreground">{r.site || '—'}</td>
                         <td className="px-4 py-2">
-                          <button onClick={() => onDelete(r.id)} className="text-muted-foreground hover:text-destructive transition-colors">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => onEdit(r)} className="text-muted-foreground hover:text-foreground transition-colors" title="Edit">
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button onClick={() => onDelete(r.id)} className="text-muted-foreground hover:text-destructive transition-colors" title="Delete">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
