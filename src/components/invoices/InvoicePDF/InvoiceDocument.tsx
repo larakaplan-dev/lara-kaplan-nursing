@@ -10,11 +10,11 @@ const GREY = '#64748b'
 const s = StyleSheet.create({
   page: { padding: 40, fontFamily: 'Helvetica', fontSize: 9, color: '#0f172a' },
   // Header
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, paddingBottom: 14, borderBottomWidth: 2, borderBottomColor: TEAL },
-  logo: { width: 80, height: 80, objectFit: 'contain' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20, paddingBottom: 8, borderBottomWidth: 2, borderBottomColor: TEAL },
+  logo: { width: 110, height: 110, objectFit: 'contain' },
   practiceName: { fontSize: 13, fontFamily: 'Helvetica-Bold', color: TEAL },
   practiceDetail: { fontSize: 8, color: GREY, marginTop: 2 },
-  invoiceTitle: { fontSize: 20, fontFamily: 'Helvetica-Bold', color: TEAL, textAlign: 'right' },
+  invoiceTitle: { fontSize: 13, fontFamily: 'Helvetica-Bold', color: TEAL, textAlign: 'right' },
   invoiceMeta: { fontSize: 8, color: GREY, textAlign: 'right', marginTop: 2 },
   // Patient
   patientSection: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
