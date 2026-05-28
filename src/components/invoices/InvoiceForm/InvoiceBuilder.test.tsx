@@ -69,4 +69,22 @@ describe('InvoiceBuilder — service line price', () => {
     // Grand total must reflect R 100.00
     expect(screen.getAllByText('R 100.00').length).toBeGreaterThanOrEqual(1)
   })
+
+  it('typing a multi-digit price is not garbled by toFixed reformatting', async () => {
+    const user = userEvent.setup()
+    renderBuilder()
+
+    const [addService] = screen.getAllByRole('button', { name: /^add$/i })
+    await user.click(addService)
+
+    const priceInput = screen.getByRole('spinbutton')
+    // Simulate what a user does: select-all then type a new value
+    await user.tripleClick(priceInput)
+    await user.type(priceInput, '350')
+
+    // If toFixed(2) re-formats after every keypress, the cursor is pushed to
+    // the end of "X.00" and subsequent digits append there, mangling the value.
+    // The correct result is R 350.00, not something like R 3.50 or R 3 501.00.
+    expect(screen.getAllByText('R 350.00').length).toBeGreaterThanOrEqual(1)
+  })
 })

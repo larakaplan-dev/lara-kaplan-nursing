@@ -363,7 +363,9 @@ export function InvoiceBuilder({ preselectedPatientId }: InvoiceBuilderProps) {
                     <Label className="text-xs">Price (R)</Label>
                     <Input
                       type="number"
-                      value={(line.unit_price_cents / 100).toFixed(2)}
+                      step="0.01"
+                      min="0"
+                      value={line.unit_price_cents / 100}
                       onChange={e => updateServiceLine(i, 'unit_price_cents', Math.round(parseFloat(e.target.value || '0') * 100))}
                       className="text-xs h-9"
                     />
@@ -421,7 +423,9 @@ export function InvoiceBuilder({ preselectedPatientId }: InvoiceBuilderProps) {
                     <Label className="text-xs">Price (R)</Label>
                     <Input
                       type="number"
-                      value={(line.unit_price_cents / 100).toFixed(2)}
+                      step="0.01"
+                      min="0"
+                      value={line.unit_price_cents / 100}
                       onChange={e => updateVaccineLine(i, 'unit_price_cents', Math.round(parseFloat(e.target.value || '0') * 100))}
                       className="text-xs h-9"
                     />
