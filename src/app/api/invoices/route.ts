@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { logAudit } from '@/lib/audit'
+import type { Invoice } from '@/types'
 
 const CreateInvoiceSchema = z.object({
   patient_id: z.string().uuid('patient_id must be a valid UUID'),
+  parent_id: z.string().uuid('parent_id must be a valid UUID'),
   invoice_date: z.string().min(1, 'invoice_date is required'),
 })
 
@@ -41,7 +43,7 @@ export async function POST(req: NextRequest) {
   const { service_lines, vaccine_lines, ...invoiceData } = body
 
   // Atomic creation via DB function — wraps header + line inserts in a single transaction
-  const { data: invoice, error: invErr } = await supabase
+  const { data: invoiceRaw, error: invErr } = await supabase
     .rpc('create_invoice_with_lines', {
       p_invoice: invoiceData,
       p_service_lines: service_lines ?? [],
@@ -51,6 +53,7 @@ export async function POST(req: NextRequest) {
 
   if (invErr) return NextResponse.json({ error: invErr.message }, { status: 500 })
 
+  const invoice = invoiceRaw as Invoice
   await logAudit(supabase, 'CREATE', 'invoices', invoice.id,
     `${invoice.invoice_number} · ${invoice.patient_name}`)
 

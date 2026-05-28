@@ -3,18 +3,21 @@ import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { logAudit } from '@/lib/audit'
 
-const CreatePatientSchema = z.object({
-  parent_id: z.string().uuid('parent_id must be a valid UUID'),
-  baby_name: z.string().nullable().optional(),
-  baby_dob: z.string().nullable().optional(),
-  place_of_birth: z.string().nullable().optional(),
-  weeks_gestation: z.number().nullable().optional(),
-  birth_weight_grams: z.number().int().nullable().optional(),
-  mode_of_delivery: z.enum(['NVD', 'C-Section', 'Assisted']).nullable().optional(),
-  discharge_weight_grams: z.number().int().nullable().optional(),
-  paed_notes: z.string().nullable().optional(),
-  consent_date: z.string().nullable().optional(),
-  consent_name: z.string().nullable().optional(),
+const CreateParentSchema = z.object({
+  client_name: z.string().min(1, 'client_name is required'),
+  client_id_number: z.string().nullable().optional(),
+  partner_name: z.string().nullable().optional(),
+  home_address: z.string().nullable().optional(),
+  contact_number: z.string().nullable().optional(),
+  email: z.string().nullable().optional(),
+  medical_aid_name: z.string().nullable().optional(),
+  medical_aid_number: z.string().nullable().optional(),
+  main_member_name: z.string().nullable().optional(),
+  main_member_id: z.string().nullable().optional(),
+  maternal_history: z.string().nullable().optional(),
+  num_children: z.number().int().nullable().optional(),
+  num_pregnancies: z.number().int().nullable().optional(),
+  gynae_notes: z.string().nullable().optional(),
 })
 
 export async function GET(req: NextRequest) {
@@ -24,11 +27,10 @@ export async function GET(req: NextRequest) {
   const limit = parseInt(searchParams.get('limit') || '50')
   const offset = parseInt(searchParams.get('offset') || '0')
   const archived = searchParams.get('archived') === 'true'
-  const parent_id = searchParams.get('parent_id')
 
   let query = supabase
-    .from('patients')
-    .select('*, parents!parent_id(client_name, contact_number, email, medical_aid_name, medical_aid_number)', { count: 'exact' })
+    .from('parents')
+    .select('*', { count: 'exact' })
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
 
@@ -38,40 +40,34 @@ export async function GET(req: NextRequest) {
     query = query.is('deleted_at', null)
   }
 
-  if (parent_id) {
-    query = query.eq('parent_id', parent_id)
-  }
-
   if (search) {
-    query = query.or(
-      `baby_name.ilike.%${search}%,parents.client_name.ilike.%${search}%`
-    )
+    query = query.ilike('client_name', `%${search}%`)
   }
 
   const { data, error, count } = await query
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ patients: data, total: count })
+  return NextResponse.json({ parents: data, total: count })
 }
 
 export async function POST(req: NextRequest) {
   const supabase = createAdminClient()
   const body = await req.json()
 
-  const parsed = CreatePatientSchema.safeParse(body)
+  const parsed = CreateParentSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   }
 
   const { data, error } = await supabase
-    .from('patients')
+    .from('parents')
     .insert([parsed.data])
     .select()
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  await logAudit(supabase, 'CREATE', 'patients', data.id, data.baby_name ?? undefined)
+  await logAudit(supabase, 'CREATE', 'parents', data.id, data.client_name)
 
-  return NextResponse.json({ patient: data }, { status: 201 })
+  return NextResponse.json({ parent: data }, { status: 201 })
 }

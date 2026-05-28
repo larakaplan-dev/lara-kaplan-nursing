@@ -1,6 +1,6 @@
-import type { PatientFormData, OcrGrowthEntry, OcrVaccination, OcrExtractedData } from '@/types'
+import type { ParentFormData, PatientFormData, OcrGrowthEntry, OcrVaccination, OcrExtractedData } from '@/types'
 
-type PartialPatient = Partial<PatientFormData>
+type PartialPatient = Partial<ParentFormData & PatientFormData>
 
 // ─── Label detection ──────────────────────────────────────────────────────────
 // These are the printed form labels. Any line matching these is a label, not a value.
@@ -209,7 +209,7 @@ export function extractPatientFields(rawText: string): PartialPatient {
   //   medical_aid_name, medical_aid_number, main_member_name, main_member_id
 
   let nameIdx = 0 // tracks which name slot we're filling
-  const NAME_SLOTS: Array<keyof PatientFormData> = [
+  const NAME_SLOTS: Array<keyof (ParentFormData & PatientFormData)> = [
     'client_name', 'partner_name', 'baby_name', 'medical_aid_name', 'main_member_name'
   ]
 

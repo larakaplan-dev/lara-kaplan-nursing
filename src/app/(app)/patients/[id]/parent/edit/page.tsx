@@ -1,26 +1,23 @@
 'use client'
 
-import { use } from 'react'
-import { useState } from 'react'
+import { use, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import Link from 'next/link'
-import { TopBar } from '@/components/layout/TopBar'
-import { PatientForm } from '@/components/patients/PatientForm'
-import { Button } from '@/components/ui/button'
 import { ChevronLeft } from 'lucide-react'
-import type { Patient, PatientFormData } from '@/types'
+import { TopBar } from '@/components/layout/TopBar'
+import { ParentForm } from '@/components/parents/ParentForm'
+import { Button } from '@/components/ui/button'
+import type { Patient, ParentFormData } from '@/types'
 
-function nullifyPatient(obj: Record<string, string>): Record<string, unknown> {
+function nullifyParent(data: ParentFormData): Record<string, unknown> {
   const out: Record<string, unknown> = {}
-  for (const [k, v] of Object.entries(obj)) {
+  for (const [k, v] of Object.entries(data)) {
     if (v === '' || v === null || v === undefined) {
       out[k] = null
-    } else if (['birth_weight_grams', 'discharge_weight_grams'].includes(k)) {
-      out[k] = parseInt(v) || null
-    } else if (k === 'weeks_gestation') {
-      out[k] = parseFloat(v) || null
+    } else if (['num_children', 'num_pregnancies'].includes(k)) {
+      out[k] = parseInt(v as string) || null
     } else {
       out[k] = v
     }
@@ -28,7 +25,7 @@ function nullifyPatient(obj: Record<string, string>): Record<string, unknown> {
   return out
 }
 
-export default function EditPatientPage({ params }: { params: Promise<{ id: string }> }) {
+export default function ParentEditPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
   const queryClient = useQueryClient()
@@ -41,40 +38,45 @@ export default function EditPatientPage({ params }: { params: Promise<{ id: stri
   })
 
   const patient = data?.patient
+  const parent = patient?.parent
 
-  const handleSubmit = async (data: PatientFormData) => {
+  const handleSubmit = async (formData: ParentFormData) => {
+    if (!parent?.id) return
     setIsLoading(true)
     try {
-      const res = await fetch(`/api/patients/${id}`, {
-        method: 'PUT',
+      const res = await fetch(`/api/parents/${parent.id}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(nullifyPatient(data as unknown as Record<string, string>)),
+        body: JSON.stringify(nullifyParent(formData)),
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error)
-      toast.success('Baby details updated!')
+      toast.success('Parent details updated!')
       queryClient.invalidateQueries({ queryKey: ['patient', id] })
       router.push(`/patients/${id}`)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to update patient')
+      toast.error(err instanceof Error ? err.message : 'Failed to update parent')
     } finally {
       setIsLoading(false)
     }
   }
 
-  if (!patient) return <div className="p-6 text-muted-foreground">Loading…</div>
+  if (!patient || !parent) {
+    return <div className="p-6 text-muted-foreground">Loading…</div>
+  }
 
   return (
     <div>
       <TopBar
-        title={`Edit Baby — ${patient.baby_name || patient.parent?.client_name}`}
+        title={`Edit Parent — ${parent.client_name}`}
+        subtitle={patient.baby_name ? `Parent of ${patient.baby_name}` : undefined}
         actions={
           <Button variant="ghost" size="sm" asChild>
             <Link href={`/patients/${id}`}><ChevronLeft className="w-4 h-4 mr-1" />Cancel</Link>
           </Button>
         }
       />
-      <PatientForm patient={patient} onSubmit={handleSubmit} isLoading={isLoading} />
+      <ParentForm parent={parent} onSubmit={handleSubmit} isLoading={isLoading} />
     </div>
   )
 }

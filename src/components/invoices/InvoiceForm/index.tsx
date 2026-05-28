@@ -12,15 +12,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
-import { Plus, Trash2, Download } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
 import { formatZAR } from '@/lib/utils'
-import type { Patient, ProcedureCode, VaccineCatalog, InvoiceServiceLineForm, InvoiceVaccineLineForm } from '@/types'
+import type { Parent, Patient, ProcedureCode, VaccineCatalog, InvoiceServiceLineForm, InvoiceVaccineLineForm } from '@/types'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Check, ChevronsUpDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-// Dynamic import to avoid SSR issues with @react-pdf/renderer
 const PDFDownloadButton = dynamic(() => import('./PDFDownloadButton'), { ssr: false })
 
 const ICD10_DEFAULTS: Record<string, string> = {
@@ -35,17 +34,43 @@ interface InvoiceBuilderProps {
 export function InvoiceBuilder({ preselectedPatientId }: InvoiceBuilderProps) {
   const router = useRouter()
   const queryClient = useQueryClient()
-  const [patientId, setPatientId] = useState(preselectedPatientId || '')
+  const [parentId, setParentId] = useState('')
+  const [childId, setChildId] = useState('')
   const [invoiceDate, setInvoiceDate] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [serviceLines, setServiceLines] = useState<InvoiceServiceLineForm[]>([])
   const [vaccineLines, setVaccineLines] = useState<InvoiceVaccineLineForm[]>([])
   const [saving, setSaving] = useState(false)
-  const [patientOpen, setPatientOpen] = useState(false)
-  const [pdfReady, setPdfReady] = useState(false)
+  const [parentOpen, setParentOpen] = useState(false)
+  const [childOpen, setChildOpen] = useState(false)
 
-  const { data: patientsData } = useQuery<{ patients: Patient[] }>({
-    queryKey: ['patients', ''],
-    queryFn: () => fetch('/api/patients?limit=200').then(r => r.json()),
+  // Resolve preselected child → parent on mount
+  const { data: preselectedPatientData } = useQuery<{ patient: Patient }>({
+    queryKey: ['patient', preselectedPatientId],
+    queryFn: () => fetch(`/api/patients/${preselectedPatientId}`).then(r => r.json()),
+    enabled: !!preselectedPatientId,
+  })
+
+  useEffect(() => {
+    if (preselectedPatientData?.patient) {
+      const p = preselectedPatientData.patient
+      setParentId(p.parent_id)
+      setChildId(p.id)
+    }
+  }, [preselectedPatientData])
+
+  // Parents list
+  const { data: parentsData } = useQuery<{ parents: Parent[] }>({
+    queryKey: ['parents-select'],
+    queryFn: () => fetch('/api/parents?limit=200').then(r => r.json()),
+    staleTime: 0,
+  })
+
+  // Children of selected parent
+  const { data: childrenData } = useQuery<{ patients: Patient[] }>({
+    queryKey: ['patients-by-parent', parentId],
+    queryFn: () => fetch(`/api/patients?parent_id=${parentId}&limit=50`).then(r => r.json()),
+    enabled: !!parentId,
+    staleTime: 0,
   })
 
   const { data: codesData } = useQuery<{ codes: ProcedureCode[] }>({
@@ -60,21 +85,19 @@ export function InvoiceBuilder({ preselectedPatientId }: InvoiceBuilderProps) {
     staleTime: Infinity,
   })
 
-  const { data: patientData } = useQuery<{ patient: Patient }>({
-    queryKey: ['patient', patientId],
-    queryFn: () => fetch(`/api/patients/${patientId}`).then(r => r.json()),
-    enabled: !!patientId,
-  })
-
-  const patients = patientsData?.patients || []
+  const parents = parentsData?.parents || []
+  const children = childrenData?.patients || []
   const codes = (codesData?.codes || []).filter(c => c.category === 'consultation' || c.category === 'immunisation')
   const vaccines = vaccinesData?.vaccines || []
-  const selectedPatient = patientData?.patient
 
-  // Auto-select preselected patient
-  useEffect(() => {
-    if (preselectedPatientId) setPatientId(preselectedPatientId)
-  }, [preselectedPatientId])
+  const selectedParent = parents.find(p => p.id === parentId) ?? preselectedPatientData?.patient?.parent ?? null
+  const selectedChild = children.find(c => c.id === childId) ?? preselectedPatientData?.patient ?? null
+
+  const handleParentSelect = (id: string) => {
+    setParentId(id)
+    setChildId('')
+    setParentOpen(false)
+  }
 
   const servicesTotalCents = serviceLines.reduce((s, l) => s + l.unit_price_cents * l.quantity, 0)
   const vaccinesTotalCents = vaccineLines.reduce((s, l) => s + l.unit_price_cents * l.quantity, 0)
@@ -138,8 +161,8 @@ export function InvoiceBuilder({ preselectedPatientId }: InvoiceBuilderProps) {
   }
 
   const handleSave = async () => {
-    if (!patientId || !selectedPatient) {
-      toast.error('Please select a patient')
+    if (!parentId || !childId) {
+      toast.error('Please select a parent and child')
       return
     }
     if (!serviceLines.length && !vaccineLines.length) {
@@ -149,14 +172,15 @@ export function InvoiceBuilder({ preselectedPatientId }: InvoiceBuilderProps) {
     setSaving(true)
     try {
       const body = {
-        patient_id: patientId,
+        patient_id: childId,
+        parent_id: parentId,
         invoice_date: invoiceDate,
-        patient_name: selectedPatient.baby_name || selectedPatient.client_name,
-        patient_dob: selectedPatient.baby_dob,
-        medical_aid_name: selectedPatient.medical_aid_name,
-        medical_aid_number: selectedPatient.medical_aid_number,
-        main_member_name: selectedPatient.main_member_name,
-        main_member_id: selectedPatient.main_member_id,
+        patient_name: selectedChild?.baby_name || selectedParent?.client_name,
+        patient_dob: selectedChild?.baby_dob,
+        medical_aid_name: selectedParent?.medical_aid_name,
+        medical_aid_number: selectedParent?.medical_aid_number,
+        main_member_name: selectedParent?.main_member_name,
+        main_member_id: selectedParent?.main_member_id,
         services_total_cents: servicesTotalCents,
         vaccines_total_cents: vaccinesTotalCents,
         grand_total_cents: grandTotal,
@@ -173,7 +197,7 @@ export function InvoiceBuilder({ preselectedPatientId }: InvoiceBuilderProps) {
       if (!res.ok) throw new Error(json.error)
       toast.success(`Invoice ${json.invoice.invoice_number} created`)
       queryClient.invalidateQueries({ queryKey: ['invoices-all'] })
-      queryClient.invalidateQueries({ queryKey: ['invoices', patientId] })
+      queryClient.invalidateQueries({ queryKey: ['invoices', childId] })
       router.push(`/invoices/${json.invoice.id}`)
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Failed to save')
@@ -182,15 +206,15 @@ export function InvoiceBuilder({ preselectedPatientId }: InvoiceBuilderProps) {
     }
   }
 
-  const invoiceDataForPDF = selectedPatient ? {
+  const invoiceDataForPDF = selectedChild && selectedParent ? {
     invoiceNumber: 'PREVIEW',
     invoiceDate,
-    patientName: selectedPatient.baby_name || selectedPatient.client_name,
-    patientDob: selectedPatient.baby_dob,
-    medicalAidName: selectedPatient.medical_aid_name,
-    medicalAidNumber: selectedPatient.medical_aid_number,
-    mainMemberName: selectedPatient.main_member_name,
-    mainMemberId: selectedPatient.main_member_id,
+    patientName: selectedChild.baby_name || selectedParent.client_name || '',
+    patientDob: selectedChild.baby_dob,
+    medicalAidName: selectedParent.medical_aid_name,
+    medicalAidNumber: selectedParent.medical_aid_number,
+    mainMemberName: selectedParent.main_member_name,
+    mainMemberId: selectedParent.main_member_id,
     serviceLines,
     vaccineLines,
     servicesTotalCents,
@@ -200,41 +224,36 @@ export function InvoiceBuilder({ preselectedPatientId }: InvoiceBuilderProps) {
 
   return (
     <div className="space-y-5">
-      {/* Patient + Date */}
+      {/* Parent + Child + Date */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Invoice Details</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Step 1: Parent */}
           <div className="space-y-1.5">
-            <Label className="text-xs">Patient <span className="text-destructive">*</span></Label>
-            <Popover open={patientOpen} onOpenChange={setPatientOpen}>
+            <Label className="text-xs">Parent / Guardian <span className="text-destructive">*</span></Label>
+            <Popover open={parentOpen} onOpenChange={setParentOpen}>
               <PopoverTrigger asChild>
                 <Button variant="outline" role="combobox" className="w-full justify-between font-normal">
-                  {patientId
-                    ? (patients.find(p => p.id === patientId)
-                      ? `${patients.find(p => p.id === patientId)?.baby_name || 'Baby'} (${patients.find(p => p.id === patientId)?.client_name})`
-                      : selectedPatient
-                        ? `${selectedPatient.baby_name || 'Baby'} (${selectedPatient.client_name})`
-                        : 'Select patient…')
-                    : 'Select patient…'}
+                  {selectedParent ? selectedParent.client_name : 'Select parent…'}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[400px] p-0">
+              <PopoverContent className="w-[320px] p-0">
                 <Command>
-                  <CommandInput placeholder="Search patients…" />
+                  <CommandInput placeholder="Search parents…" />
                   <CommandList>
-                    <CommandEmpty>No patient found.</CommandEmpty>
+                    <CommandEmpty>No parent found.</CommandEmpty>
                     <CommandGroup>
-                      {patients.map(p => (
+                      {parents.map(p => (
                         <CommandItem
                           key={p.id}
-                          value={`${p.baby_name} ${p.client_name}`}
-                          onSelect={() => { setPatientId(p.id); setPatientOpen(false) }}
+                          value={p.client_name}
+                          onSelect={() => handleParentSelect(p.id)}
                         >
-                          <Check className={cn('mr-2 h-4 w-4', patientId === p.id ? 'opacity-100' : 'opacity-0')} />
-                          {p.baby_name || 'Baby'} — {p.client_name}
+                          <Check className={cn('mr-2 h-4 w-4', parentId === p.id ? 'opacity-100' : 'opacity-0')} />
+                          {p.client_name}
                         </CommandItem>
                       ))}
                     </CommandGroup>
@@ -243,14 +262,56 @@ export function InvoiceBuilder({ preselectedPatientId }: InvoiceBuilderProps) {
               </PopoverContent>
             </Popover>
           </div>
+
+          {/* Step 2: Child */}
+          <div className="space-y-1.5">
+            <Label className="text-xs">Child <span className="text-destructive">*</span></Label>
+            <Popover open={childOpen} onOpenChange={v => parentId && setChildOpen(v)}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  disabled={!parentId}
+                  className="w-full justify-between font-normal"
+                >
+                  {selectedChild ? (selectedChild.baby_name || 'Unnamed baby') : (parentId ? 'Select child…' : 'Select parent first')}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[280px] p-0">
+                <Command>
+                  <CommandInput placeholder="Search children…" />
+                  <CommandList>
+                    <CommandEmpty>No children found.</CommandEmpty>
+                    <CommandGroup>
+                      {children.map(c => (
+                        <CommandItem
+                          key={c.id}
+                          value={c.baby_name || c.id}
+                          onSelect={() => { setChildId(c.id); setChildOpen(false) }}
+                        >
+                          <Check className={cn('mr-2 h-4 w-4', childId === c.id ? 'opacity-100' : 'opacity-0')} />
+                          {c.baby_name || 'Unnamed baby'}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {/* Invoice date */}
           <div className="space-y-1.5">
             <Label className="text-xs">Invoice Date</Label>
             <Input type="date" value={invoiceDate} onChange={e => setInvoiceDate(e.target.value)} />
           </div>
-          {selectedPatient && (
-            <div className="sm:col-span-2 text-xs text-muted-foreground bg-muted/40 rounded-lg px-3 py-2 space-y-0.5">
-              <p><strong>Medical Aid:</strong> {selectedPatient.medical_aid_name || '—'} · {selectedPatient.medical_aid_number || '—'}</p>
-              <p><strong>Main Member:</strong> {selectedPatient.main_member_name || '—'} · {selectedPatient.main_member_id || '—'}</p>
+
+          {/* Medical aid summary — populates from parent */}
+          {selectedParent && (
+            <div className="sm:col-span-3 text-xs text-muted-foreground bg-muted/40 rounded-lg px-3 py-2 space-y-0.5">
+              <p><strong>Medical Aid:</strong> {selectedParent.medical_aid_name || '—'} · {selectedParent.medical_aid_number || '—'}</p>
+              <p><strong>Main Member:</strong> {selectedParent.main_member_name || '—'} · {selectedParent.main_member_id || '—'}</p>
             </div>
           )}
         </CardContent>
