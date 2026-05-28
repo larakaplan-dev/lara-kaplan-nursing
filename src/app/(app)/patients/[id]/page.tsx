@@ -103,7 +103,10 @@ export default function PatientProfilePage({ params }: { params: Promise<{ id: s
             {!patient.deleted_at && (
               <>
                 <Button variant="outline" size="sm" asChild>
-                  <Link href={`/patients/${id}/edit`}><Pencil className="w-3.5 h-3.5 mr-1" />Edit</Link>
+                  <Link href={`/patients/${id}/edit`}><Pencil className="w-3.5 h-3.5 mr-1" />Edit Baby</Link>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href={`/patients/${id}/parent/edit`}><Pencil className="w-3.5 h-3.5 mr-1" />Edit Parent</Link>
                 </Button>
                 <Button size="sm" asChild>
                   <Link href={`/invoices/new?patient=${id}`}><FileText className="w-3.5 h-3.5 mr-1" />Invoice</Link>
@@ -149,12 +152,12 @@ export default function PatientProfilePage({ params }: { params: Promise<{ id: s
                 <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">Client Details</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <InfoRow label="Mom Name" value={patient.client_name} />
-                <InfoRow label="ID Number" value={patient.client_id_number} />
-                <InfoRow label="Partner" value={patient.partner_name} />
-                <InfoRow label="Contact" value={patient.contact_number} />
-                <InfoRow label="Email" value={patient.email} />
-                <InfoRow label="Address" value={patient.home_address} />
+                <InfoRow label="Mom Name" value={patient.parent?.client_name} />
+                <InfoRow label="ID Number" value={patient.parent?.client_id_number} />
+                <InfoRow label="Partner" value={patient.parent?.partner_name} />
+                <InfoRow label="Contact" value={patient.parent?.contact_number} />
+                <InfoRow label="Email" value={patient.parent?.email} />
+                <InfoRow label="Address" value={patient.parent?.home_address} />
               </CardContent>
             </Card>
 
@@ -164,10 +167,10 @@ export default function PatientProfilePage({ params }: { params: Promise<{ id: s
                 <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">Medical Aid</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <InfoRow label="Medical Aid" value={patient.medical_aid_name} />
-                <InfoRow label="Aid Number" value={patient.medical_aid_number} />
-                <InfoRow label="Main Member" value={patient.main_member_name} />
-                <InfoRow label="Member ID" value={patient.main_member_id} />
+                <InfoRow label="Medical Aid" value={patient.parent?.medical_aid_name} />
+                <InfoRow label="Aid Number" value={patient.parent?.medical_aid_number} />
+                <InfoRow label="Main Member" value={patient.parent?.main_member_name} />
+                <InfoRow label="Member ID" value={patient.parent?.main_member_id} />
               </CardContent>
             </Card>
 
@@ -194,10 +197,10 @@ export default function PatientProfilePage({ params }: { params: Promise<{ id: s
                 <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">Pregnancy History</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <InfoRow label="Pregnancies" value={patient.num_pregnancies} />
-                <InfoRow label="Children" value={patient.num_children} />
-                {patient.maternal_history && <InfoRow label="Maternal History" value={patient.maternal_history} />}
-                {patient.gynae_notes && <InfoRow label="Gynae Notes" value={patient.gynae_notes} />}
+                <InfoRow label="Pregnancies" value={patient.parent?.num_pregnancies} />
+                <InfoRow label="Children" value={patient.parent?.num_children} />
+                {patient.parent?.maternal_history && <InfoRow label="Maternal History" value={patient.parent.maternal_history} />}
+                {patient.parent?.gynae_notes && <InfoRow label="Gynae Notes" value={patient.parent.gynae_notes} />}
               </CardContent>
             </Card>
           </div>

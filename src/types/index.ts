@@ -2,7 +2,7 @@
 // Core domain types
 // ============================================================
 
-export interface Patient {
+export interface Parent {
   id: string
   client_name: string
   client_id_number: string | null
@@ -10,9 +10,6 @@ export interface Patient {
   home_address: string | null
   contact_number: string | null
   email: string | null
-  baby_name: string | null
-  baby_dob: string | null
-  place_of_birth: string | null
   medical_aid_name: string | null
   medical_aid_number: string | null
   main_member_name: string | null
@@ -21,6 +18,19 @@ export interface Patient {
   num_children: number | null
   num_pregnancies: number | null
   gynae_notes: string | null
+  created_at: string
+  updated_at: string
+  deleted_at: string | null
+  deletion_reason: string | null
+}
+
+export interface Patient {
+  id: string
+  parent_id: string
+  parent?: Parent
+  baby_name: string | null
+  baby_dob: string | null
+  place_of_birth: string | null
   weeks_gestation: number | null
   birth_weight_grams: number | null
   mode_of_delivery: 'NVD' | 'C-Section' | 'Assisted' | null
@@ -106,6 +116,7 @@ export interface ProcedureCode {
 export interface Invoice {
   id: string
   patient_id: string
+  parent_id: string | null
   invoice_number: string
   invoice_date: string
   patient_name: string
@@ -157,16 +168,13 @@ export interface InvoiceVaccineLine {
 // Form input types (for React Hook Form)
 // ============================================================
 
-export type PatientFormData = {
+export type ParentFormData = {
   client_name: string
   client_id_number: string
   partner_name: string
   home_address: string
   contact_number: string
   email: string
-  baby_name: string
-  baby_dob: string
-  place_of_birth: string
   medical_aid_name: string
   medical_aid_number: string
   main_member_name: string
@@ -175,6 +183,12 @@ export type PatientFormData = {
   num_children: string
   num_pregnancies: string
   gynae_notes: string
+}
+
+export type PatientFormData = {
+  baby_name: string
+  baby_dob: string
+  place_of_birth: string
   weeks_gestation: string
   birth_weight_grams: string
   mode_of_delivery: string
@@ -258,7 +272,7 @@ export type OcrVaccination = {
 }
 
 export type OcrExtractedData = {
-  patientFields: Partial<PatientFormData>
+  patientFields: Partial<ParentFormData & PatientFormData>
   growthEntries: OcrGrowthEntry[]
   vaccinations: OcrVaccination[]
 }

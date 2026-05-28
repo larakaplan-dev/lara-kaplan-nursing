@@ -118,7 +118,7 @@ export default function PatientsPage() {
                       <div>
                         <p className="text-sm font-semibold">{p.baby_name || 'Unnamed baby'}</p>
                         <p className="text-xs text-muted-foreground">
-                          Mom: {p.client_name}
+                          Mom: {p.parent?.client_name}
                           {p.baby_dob
                             ? ` · Born ${formatDate(p.baby_dob)} · ${ageLabel(p.baby_dob)}`
                             : ''}
