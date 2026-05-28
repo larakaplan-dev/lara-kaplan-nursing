@@ -11,16 +11,18 @@ const CreateVaccinationSchema = z.object({
 })
 
 const UpdateVaccinationSchema = z.object({
-  recordId:          z.string().uuid('Invalid recordId'),
-  vaccine_id:        z.string().uuid().nullable().optional(),
-  vaccine_name:      z.string().min(1, 'vaccine_name is required'),
-  age_group_label:   z.string().nullable().optional(),
-  administered_date: z.string().min(1, 'administered_date is required'),
-  batch_number:      z.string().nullable().optional(),
-  expiry_date:       z.string().nullable().optional(),
-  site:              z.string().nullable().optional(),
-  nappi_code:        z.string().nullable().optional(),
-  price_cents:       z.number().int().nullable().optional(),
+  recordId:                    z.string().uuid('Invalid recordId'),
+  vaccine_id:                  z.string().uuid().nullable().optional(),
+  vaccine_name:                z.string().min(1, 'vaccine_name is required'),
+  age_group_label:             z.string().nullable().optional(),
+  administered_date:           z.string().min(1, 'administered_date is required'),
+  batch_number:                z.string().nullable().optional(),
+  expiry_date:                 z.string().nullable().optional(),
+  site:                        z.string().nullable().optional(),
+  nappi_code:                  z.string().nullable().optional(),
+  price_cents:                 z.number().int().nullable().optional(),
+  administered_by_third_party: z.boolean().optional(),
+  third_party_notes:           z.string().nullable().optional(),
 })
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

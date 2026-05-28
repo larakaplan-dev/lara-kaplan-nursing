@@ -102,6 +102,8 @@ export interface VaccinationRecord {
   site: string | null
   nappi_code: string | null
   price_cents: number | null
+  administered_by_third_party: boolean
+  third_party_notes: string | null
   created_at: string
 }
 
@@ -218,6 +220,8 @@ export type VaccinationFormData = {
   site: string
   nappi_code: string
   price_cents: string
+  administered_by_third_party: boolean
+  third_party_notes: string
 }
 
 export type InvoiceServiceLineForm = {

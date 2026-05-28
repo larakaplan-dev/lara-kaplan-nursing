@@ -360,8 +360,13 @@ export function InvoiceBuilder({ preselectedPatientId }: InvoiceBuilderProps) {
                     <Input value={line.icd10_code} onChange={e => updateServiceLine(i, 'icd10_code', e.target.value)} className="text-xs h-9" placeholder="Z00.1" />
                   </div>
                   <div className="sm:col-span-1 space-y-1">
-                    <Label className="text-xs">Price</Label>
-                    <p className="text-xs font-medium h-9 flex items-center">{formatZAR(line.unit_price_cents)}</p>
+                    <Label className="text-xs">Price (R)</Label>
+                    <Input
+                      type="number"
+                      value={(line.unit_price_cents / 100).toFixed(2)}
+                      onChange={e => updateServiceLine(i, 'unit_price_cents', Math.round(parseFloat(e.target.value || '0') * 100))}
+                      className="text-xs h-9"
+                    />
                   </div>
                   <div className="sm:col-span-1 flex justify-end pb-0.5">
                     <button onClick={() => setServiceLines(prev => prev.filter((_, j) => j !== i))}

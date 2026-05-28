@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Plus, CheckCircle2, Circle, Trash2, Pencil } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
 import { formatDate } from '@/lib/utils'
 import type { VaccinationRecord, VaccineCatalog, VaccinationFormData } from '@/types'
 
@@ -34,6 +35,7 @@ export function VaccinationsTab({ patientId }: { patientId: string }) {
   const ageGroupVal = watch('age_group_label')
   const siteVal = watch('site')
   const vaccineIdVal = watch('vaccine_id')
+  const isThirdParty = watch('administered_by_third_party')
 
   const { data: vaccsData } = useQuery<{ records: VaccinationRecord[] }>({
     queryKey: ['vaccinations', patientId],
@@ -56,7 +58,7 @@ export function VaccinationsTab({ patientId }: { patientId: string }) {
   }, {} as Record<string, VaccinationRecord[]>)
 
   const openAdd = () => {
-    reset({ administered_date: format(new Date(), 'yyyy-MM-dd') })
+    reset({ administered_date: format(new Date(), 'yyyy-MM-dd'), administered_by_third_party: false, third_party_notes: '' })
     setSelectedVaccine(null)
     setEditingRecord(null)
     setOpen(true)
@@ -65,15 +67,17 @@ export function VaccinationsTab({ patientId }: { patientId: string }) {
   const onEdit = (record: VaccinationRecord) => {
     setEditingRecord(record)
     reset({
-      vaccine_id:        record.vaccine_id ?? '',
-      vaccine_name:      record.vaccine_name,
-      age_group_label:   record.age_group_label ?? '',
-      administered_date: record.administered_date,
-      batch_number:      record.batch_number ?? '',
-      expiry_date:       record.expiry_date ?? '',
-      site:              record.site ?? '',
-      nappi_code:        record.nappi_code ?? '',
-      price_cents:       record.price_cents?.toString() ?? '',
+      vaccine_id:                  record.vaccine_id ?? '',
+      vaccine_name:                record.vaccine_name,
+      age_group_label:             record.age_group_label ?? '',
+      administered_date:           record.administered_date,
+      batch_number:                record.batch_number ?? '',
+      expiry_date:                 record.expiry_date ?? '',
+      site:                        record.site ?? '',
+      nappi_code:                  record.nappi_code ?? '',
+      price_cents:                 record.price_cents?.toString() ?? '',
+      administered_by_third_party: record.administered_by_third_party,
+      third_party_notes:           record.third_party_notes ?? '',
     })
     setSelectedVaccine(record.vaccine_id ? vaccines.find(v => v.id === record.vaccine_id) ?? null : null)
     setOpen(true)
@@ -99,15 +103,17 @@ export function VaccinationsTab({ patientId }: { patientId: string }) {
     setSaving(true)
     try {
       const body = {
-        vaccine_id:        formData.vaccine_id || null,
-        vaccine_name:      formData.vaccine_name,
-        age_group_label:   formData.age_group_label || null,
-        administered_date: formData.administered_date,
-        batch_number:      formData.batch_number || null,
-        expiry_date:       formData.expiry_date || null,
-        site:              formData.site || null,
-        nappi_code:        formData.nappi_code || null,
-        price_cents:       formData.price_cents ? parseInt(formData.price_cents) : null,
+        vaccine_id:                  formData.vaccine_id || null,
+        vaccine_name:                formData.vaccine_name,
+        age_group_label:             formData.age_group_label || null,
+        administered_date:           formData.administered_date,
+        batch_number:                formData.batch_number || null,
+        expiry_date:                 formData.expiry_date || null,
+        site:                        formData.site || null,
+        nappi_code:                  formData.nappi_code || null,
+        price_cents:                 formData.price_cents ? parseInt(formData.price_cents) : null,
+        administered_by_third_party: formData.administered_by_third_party ?? false,
+        third_party_notes:           formData.third_party_notes || null,
       }
 
       if (editingRecord) {
@@ -239,6 +245,23 @@ export function VaccinationsTab({ patientId }: { patientId: string }) {
               </div>
             </div>
 
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="third-party"
+                  checked={!!isThirdParty}
+                  onCheckedChange={v => setValue('administered_by_third_party', !!v)}
+                />
+                <Label htmlFor="third-party" className="text-xs cursor-pointer">Administered by third party</Label>
+              </div>
+              {isThirdParty && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Notes (optional)</Label>
+                  <Input {...register('third_party_notes')} placeholder="e.g. Given by Dr Smith at City Clinic" />
+                </div>
+              )}
+            </div>
+
             <Button type="submit" disabled={saving} className="w-full">
               {saving ? 'Saving…' : editingRecord ? 'Save Changes' : 'Record Vaccination'}
             </Button>
@@ -271,7 +294,19 @@ export function VaccinationsTab({ patientId }: { patientId: string }) {
                   <tbody className="divide-y divide-border">
                     {grouped[group].map(r => (
                       <tr key={r.id} className="hover:bg-muted/20">
-                        <td className="px-4 py-2 font-medium">{r.vaccine_name}</td>
+                        <td className="px-4 py-2 font-medium">
+                          <div className="flex flex-col gap-0.5">
+                            <div className="flex items-center gap-1.5">
+                              {r.vaccine_name}
+                              {r.administered_by_third_party && (
+                                <Badge variant="outline" className="text-xs px-1.5 py-0 text-amber-700 border-amber-300 bg-amber-50">3rd Party</Badge>
+                              )}
+                            </div>
+                            {r.administered_by_third_party && r.third_party_notes && (
+                              <span className="text-xs text-muted-foreground">{r.third_party_notes}</span>
+                            )}
+                          </div>
+                        </td>
                         <td className="px-4 py-2 text-muted-foreground">{formatDate(r.administered_date)}</td>
                         <td className="px-4 py-2 text-muted-foreground">{r.batch_number || '—'}</td>
                         <td className="px-4 py-2 text-muted-foreground">{r.expiry_date ? formatDate(r.expiry_date) : '—'}</td>
