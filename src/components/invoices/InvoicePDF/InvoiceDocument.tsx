@@ -87,6 +87,7 @@ export function InvoiceDocument({ data }: { data: InvoicePDFData }) {
             <Text style={s.practiceDetail}>Practice No. {PRACTICE.number}</Text>
             <Text style={s.practiceDetail}>{PRACTICE.address}</Text>
             <Text style={s.practiceDetail}>Tel: {PRACTICE.phone}</Text>
+            <Text style={s.practiceDetail}>{PRACTICE.clinic}</Text>
             <Text style={s.practiceDetail}>{PRACTICE.email}</Text>
           </View>
           <View>
@@ -205,7 +206,7 @@ export function InvoiceDocument({ data }: { data: InvoicePDFData }) {
         {/* Footer */}
         <View style={s.footer} fixed>
           <Text style={s.footerText}>
-            {PRACTICE.name}, Registered Nurse and Midwife · Practice No. {PRACTICE.number} · {PRACTICE.phone} · {PRACTICE.email}
+            {PRACTICE.name}, Registered Nurse and Midwife · Practice No. {PRACTICE.number} · {PRACTICE.clinic} · {PRACTICE.phone} · {PRACTICE.email}
           </Text>
         </View>
       </Page>
