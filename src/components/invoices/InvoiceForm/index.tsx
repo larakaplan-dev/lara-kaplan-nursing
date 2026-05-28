@@ -355,11 +355,11 @@ export function InvoiceBuilder({ preselectedPatientId }: InvoiceBuilderProps) {
                     <Label className="text-xs">Description</Label>
                     <Input value={line.description} onChange={e => updateServiceLine(i, 'description', e.target.value)} className="text-xs h-9" />
                   </div>
-                  <div className="sm:col-span-2 space-y-1">
+                  <div className="sm:col-span-1 space-y-1">
                     <Label className="text-xs">ICD-10</Label>
                     <Input value={line.icd10_code} onChange={e => updateServiceLine(i, 'icd10_code', e.target.value)} className="text-xs h-9" placeholder="Z00.1" />
                   </div>
-                  <div className="sm:col-span-1 space-y-1">
+                  <div className="sm:col-span-2 space-y-1">
                     <Label className="text-xs">Price (R)</Label>
                     <Input
                       type="number"
@@ -409,7 +409,7 @@ export function InvoiceBuilder({ preselectedPatientId }: InvoiceBuilderProps) {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="sm:col-span-2 space-y-1">
+                  <div className="sm:col-span-1 space-y-1">
                     <Label className="text-xs">ICD-10</Label>
                     <Input value={line.icd10_code} onChange={e => updateVaccineLine(i, 'icd10_code', e.target.value)} className="text-xs h-9" />
                   </div>
@@ -417,7 +417,7 @@ export function InvoiceBuilder({ preselectedPatientId }: InvoiceBuilderProps) {
                     <Label className="text-xs">NAPPI</Label>
                     <Input value={line.nappi_code} onChange={e => updateVaccineLine(i, 'nappi_code', e.target.value)} className="text-xs h-9" />
                   </div>
-                  <div className="sm:col-span-2 space-y-1">
+                  <div className="sm:col-span-3 space-y-1">
                     <Label className="text-xs">Price (R)</Label>
                     <Input
                       type="number"
