@@ -169,6 +169,11 @@ export function InvoiceBuilder({ preselectedPatientId }: InvoiceBuilderProps) {
       toast.error('Add at least one service or vaccine line')
       return
     }
+    const patientName = selectedChild?.baby_name || selectedParent?.client_name || null
+    if (!patientName) {
+      toast.error('Patient data is still loading — please wait a moment and try again')
+      return
+    }
     setSaving(true)
     try {
       const body = {

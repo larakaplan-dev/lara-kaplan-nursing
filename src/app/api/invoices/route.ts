@@ -8,6 +8,7 @@ const CreateInvoiceSchema = z.object({
   patient_id: z.string().uuid('patient_id must be a valid UUID'),
   parent_id: z.string().uuid('parent_id must be a valid UUID'),
   invoice_date: z.string().min(1, 'invoice_date is required'),
+  patient_name: z.string().nullable().optional(),
 })
 
 export async function GET(req: NextRequest) {
