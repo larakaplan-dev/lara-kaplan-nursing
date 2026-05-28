@@ -84,7 +84,6 @@ export function InvoiceDocument({ data }: { data: InvoicePDFData }) {
         <View style={s.header}>
           <View>
             <Text style={s.practiceName}>{PRACTICE.name}</Text>
-            <Text style={s.practiceDetail}>Registered Nurse and Midwife</Text>
             <Text style={s.practiceDetail}>Practice No. {PRACTICE.number}</Text>
             <Text style={s.practiceDetail}>{PRACTICE.address}</Text>
             <Text style={s.practiceDetail}>{PRACTICE.clinic}</Text>
