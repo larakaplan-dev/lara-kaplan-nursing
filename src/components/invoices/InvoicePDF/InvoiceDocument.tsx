@@ -11,9 +11,7 @@ const s = StyleSheet.create({
   page: { padding: 40, fontFamily: 'Helvetica', fontSize: 9, color: '#0f172a' },
   // Header
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, paddingBottom: 14, borderBottomWidth: 2, borderBottomColor: TEAL },
-  headerLeft: { flexDirection: 'row', alignItems: 'flex-start' },
   logo: { width: 80, height: 80, objectFit: 'contain' },
-  practiceInfo: { marginLeft: 10, justifyContent: 'center' },
   practiceName: { fontSize: 13, fontFamily: 'Helvetica-Bold', color: TEAL },
   practiceDetail: { fontSize: 8, color: GREY, marginTop: 2 },
   invoiceTitle: { fontSize: 20, fontFamily: 'Helvetica-Bold', color: TEAL, textAlign: 'right' },
@@ -84,19 +82,17 @@ export function InvoiceDocument({ data }: { data: InvoicePDFData }) {
       <Page size="A4" style={s.page}>
         {/* Header */}
         <View style={s.header}>
-          <View style={s.headerLeft}>
-            <Image style={s.logo} src={`${typeof window !== 'undefined' ? window.location.origin : ''}/logo.png`} />
-            <View style={s.practiceInfo}>
-              <Text style={s.practiceName}>{PRACTICE.name}</Text>
-              <Text style={s.practiceDetail}>Registered Nurse and Midwife</Text>
-              <Text style={s.practiceDetail}>Practice No. {PRACTICE.number}</Text>
-              <Text style={s.practiceDetail}>{PRACTICE.address}</Text>
-              <Text style={s.practiceDetail}>Tel: {PRACTICE.phone}</Text>
-              <Text style={s.practiceDetail}>{PRACTICE.clinic}</Text>
-              <Text style={s.practiceDetail}>{PRACTICE.email}</Text>
-            </View>
-          </View>
           <View>
+            <Text style={s.practiceName}>{PRACTICE.name}</Text>
+            <Text style={s.practiceDetail}>Registered Nurse and Midwife</Text>
+            <Text style={s.practiceDetail}>Practice No. {PRACTICE.number}</Text>
+            <Text style={s.practiceDetail}>{PRACTICE.address}</Text>
+            <Text style={s.practiceDetail}>{PRACTICE.clinic}</Text>
+            <Text style={s.practiceDetail}>Tel: {PRACTICE.phone}</Text>
+            <Text style={s.practiceDetail}>{PRACTICE.email}</Text>
+          </View>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Image style={s.logo} src={`${typeof window !== 'undefined' ? window.location.origin : ''}/logo.png`} />
             <Text style={s.invoiceTitle}>INVOICE</Text>
             <Text style={s.invoiceMeta}>{data.invoiceNumber}</Text>
             <Text style={s.invoiceMeta}>Date: {formatDate(data.invoiceDate)}</Text>
