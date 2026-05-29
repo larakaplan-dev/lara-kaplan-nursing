@@ -23,7 +23,7 @@ export async function GET() {
     monthRevenueCents: monthRevenue,
     recentPatients: (recentPatients.data || []).map(p => ({
       id: p.id,
-      client_name: (p.parents as { client_name: string } | null)?.client_name ?? '',
+      client_name: (Array.isArray(p.parents) ? p.parents[0] : p.parents as { client_name: string } | null)?.client_name ?? '',
       baby_name: p.baby_name,
       baby_dob: p.baby_dob,
       created_at: p.created_at,
