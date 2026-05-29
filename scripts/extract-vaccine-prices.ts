@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import pdfParse = require("pdf-parse");
+import pdfParse from "pdf-parse";
 
 interface VaccineEntry {
   name: string;
