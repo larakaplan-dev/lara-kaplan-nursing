@@ -51,6 +51,7 @@ export function PatientForm({ defaultValues, onSubmit, isLoading, patient }: Pat
       birth_weight_grams: patient?.birth_weight_grams?.toString() ?? '',
       mode_of_delivery: patient?.mode_of_delivery ?? '',
       discharge_weight_grams: patient?.discharge_weight_grams?.toString() ?? '',
+      sex: patient?.sex ?? '',
       paed_notes: patient?.paed_notes ?? '',
       consent_date: patient?.consent_date ?? '',
       consent_name: patient?.consent_name ?? '',
@@ -58,6 +59,7 @@ export function PatientForm({ defaultValues, onSubmit, isLoading, patient }: Pat
   })
 
   const modeOfDelivery = watch('mode_of_delivery')
+  const sex = watch('sex')
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -71,6 +73,18 @@ export function PatientForm({ defaultValues, onSubmit, isLoading, patient }: Pat
           </Field>
           <Field label="Place of Birth">
             <Input {...register('place_of_birth')} placeholder="e.g. Sandton Clinic" />
+          </Field>
+          <Field label="Sex">
+            <Select value={sex} onValueChange={v => setValue('sex', v === 'unspecified' ? '' : v)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Not specified" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="unspecified">Not specified</SelectItem>
+                <SelectItem value="male">Male</SelectItem>
+                <SelectItem value="female">Female</SelectItem>
+              </SelectContent>
+            </Select>
           </Field>
         </div>
       </Section>

@@ -35,6 +35,7 @@ export interface Patient {
   birth_weight_grams: number | null
   mode_of_delivery: 'NVD' | 'C-Section' | 'Assisted' | null
   discharge_weight_grams: number | null
+  sex: 'male' | 'female' | null
   paed_notes: string | null
   consent_date: string | null
   consent_name: string | null
@@ -195,6 +196,7 @@ export type PatientFormData = {
   birth_weight_grams: string
   mode_of_delivery: string
   discharge_weight_grams: string
+  sex: string
   paed_notes: string
   consent_date: string
   consent_name: string

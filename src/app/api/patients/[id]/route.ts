@@ -18,6 +18,7 @@ const UpdatePatientSchema = z.object({
   consent_name: z.string().nullable().optional(),
   deleted_at: z.string().nullable().optional(),
   deletion_reason: z.string().nullable().optional(),
+  sex: z.enum(['male', 'female']).nullable().optional(),
 })
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

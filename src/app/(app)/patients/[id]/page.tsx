@@ -183,6 +183,7 @@ export default function PatientProfilePage({ params }: { params: Promise<{ id: s
               </CardHeader>
               <CardContent className="space-y-2">
                 <InfoRow label="Place of Birth" value={patient.place_of_birth} />
+                <InfoRow label="Sex" value={patient.sex === 'male' ? 'Male' : patient.sex === 'female' ? 'Female' : null} />
                 <InfoRow label="Weeks Gestation" value={patient.weeks_gestation ? `${patient.weeks_gestation} weeks` : null} />
                 <InfoRow label="Mode of Delivery" value={patient.mode_of_delivery} />
                 <InfoRow label="Birth Weight" value={weightDisplay(patient.birth_weight_grams)} />
@@ -222,7 +223,7 @@ export default function PatientProfilePage({ params }: { params: Promise<{ id: s
 
         {/* GROWTH */}
         <TabsContent value="growth">
-          <GrowthTab patientId={id} />
+          <GrowthTab patientId={id} sex={patient.sex} />
         </TabsContent>
 
         {/* VACCINATIONS */}
