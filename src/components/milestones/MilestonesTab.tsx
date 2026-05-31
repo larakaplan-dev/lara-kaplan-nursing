@@ -14,12 +14,13 @@ interface Props {
   dob: string | null
 }
 
+type QueryData = { records: MilestoneRecord[]; notes: MilestoneNote[] }
+
 export function MilestonesTab({ patientId, dob }: Props) {
   const queryClient = useQueryClient()
-  const [pendingKeys, setPendingKeys] = useState<Set<string>>(new Set())
   const [savingNotes, setSavingNotes] = useState<Set<string>>(new Set())
 
-  const { data } = useQuery<{ records: MilestoneRecord[]; notes: MilestoneNote[] }>({
+  const { data } = useQuery<QueryData>({
     queryKey: ['milestones', patientId],
     queryFn: () => fetch(`/api/patients/${patientId}/milestones`).then(r => r.json()),
     staleTime: 0,
@@ -29,7 +30,18 @@ export function MilestonesTab({ patientId, dob }: Props) {
   const noteMap = Object.fromEntries((data?.notes ?? []).map(n => [n.age_group_key, n.note]))
 
   const toggleMilestone = async (key: string, checked: boolean) => {
-    setPendingKeys(prev => new Set(prev).add(key))
+    const queryKey = ['milestones', patientId]
+    await queryClient.cancelQueries({ queryKey })
+    const previous = queryClient.getQueryData<QueryData>(queryKey)
+
+    queryClient.setQueryData<QueryData>(queryKey, old => {
+      if (!old) return old
+      const records = checked
+        ? [...old.records, { id: '', patient_id: patientId, milestone_key: key, checked_at: new Date().toISOString(), created_at: new Date().toISOString() }]
+        : old.records.filter(r => r.milestone_key !== key)
+      return { ...old, records }
+    })
+
     try {
       if (checked) {
         const res = await fetch(`/api/patients/${patientId}/milestones`, {
@@ -44,11 +56,10 @@ export function MilestonesTab({ patientId, dob }: Props) {
         })
         if (!res.ok) throw new Error((await res.json()).error)
       }
-      queryClient.invalidateQueries({ queryKey: ['milestones', patientId] })
+      queryClient.invalidateQueries({ queryKey })
     } catch {
+      queryClient.setQueryData(queryKey, previous)
       toast.error('Failed to save milestone')
-    } finally {
-      setPendingKeys(prev => { const s = new Set(prev); s.delete(key); return s })
     }
   }
 
@@ -98,7 +109,6 @@ export function MilestonesTab({ patientId, dob }: Props) {
                         <Checkbox
                           id={item.key}
                           checked={checkedKeys.has(item.key)}
-                          disabled={pendingKeys.has(item.key)}
                           onCheckedChange={checked => toggleMilestone(item.key, !!checked)}
                           className="mt-0.5 flex-shrink-0"
                         />
