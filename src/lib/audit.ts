@@ -1,16 +1,15 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export type AuditAction = 'CREATE' | 'UPDATE' | 'DELETE' | 'RESTORE'
 
 export async function logAudit(
-  supabase: SupabaseClient,
   action: AuditAction,
   tableName: string,
   recordId: string,
   recordLabel?: string,
   changes?: object,
 ): Promise<void> {
-  const { error } = await supabase.from('audit_log').insert({
+  const { error } = await createAdminClient().from('audit_log').insert({
     action,
     table_name: tableName,
     record_id: recordId,

@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
       .join('\n')
     const extracted = extractAllFields(rawText)
 
-    await logAudit(supabase, 'CREATE', 'ocr_calls', crypto.randomUUID(),
+    await logAudit('CREATE', 'ocr_calls', crypto.randomUUID(),
       `${file.name} · ${Math.round(file.size / 1024)}KB · PDF`)
 
     return NextResponse.json({ rawText, ...extracted })
@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
     const rawText = visionData.responses?.[0]?.fullTextAnnotation?.text || ''
     const extracted = extractAllFields(rawText)
 
-    await logAudit(supabase, 'CREATE', 'ocr_calls', crypto.randomUUID(),
+    await logAudit('CREATE', 'ocr_calls', crypto.randomUUID(),
       `${file.name} · ${Math.round(file.size / 1024)}KB · image`)
 
     return NextResponse.json({ rawText, ...extracted })
