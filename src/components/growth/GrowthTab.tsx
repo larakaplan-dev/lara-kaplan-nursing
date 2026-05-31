@@ -33,6 +33,16 @@ const PERCENTILE_LABEL: Record<Percentile, string> = {
   p3: 'P3', p10: 'P10', p25: 'P25', p50: 'P50', p75: 'P75', p90: 'P90', p97: 'P97',
 }
 
+const PERCENTILE_STYLE: Record<Percentile, { stroke: string; strokeWidth: number; strokeDasharray?: string }> = {
+  p3:  { stroke: '#ef4444', strokeWidth: 1, strokeDasharray: '4 3' },
+  p10: { stroke: '#f97316', strokeWidth: 1 },
+  p25: { stroke: '#84cc16', strokeWidth: 1 },
+  p50: { stroke: '#0ea5e9', strokeWidth: 2 },
+  p75: { stroke: '#84cc16', strokeWidth: 1 },
+  p90: { stroke: '#f97316', strokeWidth: 1 },
+  p97: { stroke: '#ef4444', strokeWidth: 1, strokeDasharray: '4 3' },
+}
+
 function WhoLines({ metric, sex }: { metric: 'weight' | 'length' | 'hc'; sex: 'male' | 'female' }) {
   const data = getWhoData(metric, sex)
   return (
@@ -119,7 +129,7 @@ function MetricChart({ title, metric, unit, color, yDomain, entries, sex, patien
           </p>
         )}
         <ResponsiveContainer width="100%" height={260}>
-          <LineChart data={combined} margin={{ top: 5, right: 48, left: 0, bottom: 5 }}>
+          <LineChart data={combined} margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
             <XAxis
               dataKey="x"
               type="number"
@@ -136,27 +146,23 @@ function MetricChart({ title, metric, unit, color, yDomain, entries, sex, patien
             />
 
             {/* WHO percentile reference lines */}
-            {sex && PERCENTILES.map(p => (
-              <Line
-                key={p}
-                dataKey={p}
-                stroke="#94a3b8"
-                strokeWidth={1}
-                strokeDasharray={p === 'p3' || p === 'p97' ? '4 3' : undefined}
-                dot={false}
-                activeDot={false}
-                connectNulls
-                legendType="none"
-                isAnimationActive={false}
-              >
-                <Label
-                  value={PERCENTILE_LABEL[p]}
-                  position="right"
-                  fontSize={9}
-                  fill="#94a3b8"
+            {sex && PERCENTILES.map(p => {
+              const style = PERCENTILE_STYLE[p]
+              return (
+                <Line
+                  key={p}
+                  dataKey={p}
+                  stroke={style.stroke}
+                  strokeWidth={style.strokeWidth}
+                  strokeDasharray={style.strokeDasharray}
+                  dot={false}
+                  activeDot={false}
+                  connectNulls
+                  legendType="none"
+                  isAnimationActive={false}
                 />
-              </Line>
-            ))}
+              )
+            })}
 
             {/* Child's measurements */}
             <Line
@@ -171,6 +177,28 @@ function MetricChart({ title, metric, unit, color, yDomain, entries, sex, patien
             />
           </LineChart>
         </ResponsiveContainer>
+        {sex && (
+          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 justify-center">
+            {PERCENTILES.map(p => {
+              const style = PERCENTILE_STYLE[p]
+              return (
+                <div key={p} className="flex items-center gap-1">
+                  <svg width="18" height="8" className="flex-shrink-0">
+                    <line
+                      x1="0" y1="4" x2="18" y2="4"
+                      stroke={style.stroke}
+                      strokeWidth={style.strokeWidth}
+                      strokeDasharray={style.strokeDasharray}
+                    />
+                  </svg>
+                  <span style={{ fontSize: 10, color: style.stroke, lineHeight: 1 }}>
+                    {PERCENTILE_LABEL[p]}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </CardContent>
     </Card>
   )
