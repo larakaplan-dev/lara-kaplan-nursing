@@ -1,6 +1,6 @@
 import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer'
 import { format } from 'date-fns'
-import type { InvoiceServiceLineForm, InvoiceVaccineLineForm } from '@/types'
+import type { InvoicePDFData } from '@/types'
 import { PRACTICE, BANKING } from '@/lib/practiceConfig'
 
 const TEAL = '#0f4c5c'
@@ -49,6 +49,10 @@ const s = StyleSheet.create({
   // Footer
   footer: { position: 'absolute', bottom: 30, left: 40, right: 40, borderTopWidth: 0.5, borderTopColor: '#e2e8f0', paddingTop: 6 },
   footerText: { fontSize: 7, color: GREY, textAlign: 'center' },
+  // Paid stamp
+  stamp: { position: 'absolute', bottom: 80, left: 40, transform: 'rotate(-25deg)', borderWidth: 3, borderColor: '#dc2626', padding: '6 14', opacity: 0.85 },
+  stampText: { color: '#dc2626', fontFamily: 'Helvetica-Bold', fontSize: 28, letterSpacing: 2, textAlign: 'center' },
+  stampDate: { color: '#dc2626', fontSize: 9, textAlign: 'center', marginTop: 2 },
 })
 
 function formatZAR(cents: number) {
@@ -58,22 +62,6 @@ function formatZAR(cents: number) {
 function formatDate(d: string | null | undefined) {
   if (!d) return '—'
   try { return format(new Date(d), 'dd/MM/yyyy') } catch { return d }
-}
-
-export interface InvoicePDFData {
-  invoiceNumber: string
-  invoiceDate: string
-  patientName: string
-  patientDob: string | null | undefined
-  medicalAidName: string | null | undefined
-  medicalAidNumber: string | null | undefined
-  mainMemberName: string | null | undefined
-  mainMemberId: string | null | undefined
-  serviceLines: InvoiceServiceLineForm[]
-  vaccineLines: InvoiceVaccineLineForm[]
-  servicesTotalCents: number
-  vaccinesTotalCents: number
-  grandTotalCents: number
 }
 
 export function InvoiceDocument({ data }: { data: InvoicePDFData }) {
@@ -203,6 +191,14 @@ export function InvoiceDocument({ data }: { data: InvoicePDFData }) {
           <View style={s.bankRow}><Text style={s.bankLabel}>Branch Code:</Text><Text style={s.bankValue}>{BANKING.branchCode}</Text></View>
           <View style={s.bankRow}><Text style={s.bankLabel}>Reference:</Text><Text style={s.bankValue}>{data.invoiceNumber} / {data.patientName}</Text></View>
         </View>
+
+        {/* Paid stamp */}
+        {data.isPaid && (
+          <View style={s.stamp}>
+            <Text style={s.stampText}>PAID</Text>
+            {data.paidAt && <Text style={s.stampDate}>{formatDate(data.paidAt)}</Text>}
+          </View>
+        )}
 
         {/* Footer */}
         <View style={s.footer} fixed>

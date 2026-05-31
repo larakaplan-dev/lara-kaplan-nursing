@@ -132,6 +132,7 @@ export interface Invoice {
   vaccines_total_cents: number
   grand_total_cents: number
   status: 'draft' | 'sent' | 'paid'
+  paid_at: string | null
   notes: string | null
   created_at: string
   updated_at: string
@@ -244,6 +245,24 @@ export type InvoiceVaccineLineForm = {
   unit_price_cents: number
   quantity: number
   vaccination_record_id?: string
+}
+
+export interface InvoicePDFData {
+  invoiceNumber: string
+  invoiceDate: string
+  patientName: string
+  patientDob: string | null | undefined
+  medicalAidName: string | null | undefined
+  medicalAidNumber: string | null | undefined
+  mainMemberName: string | null | undefined
+  mainMemberId: string | null | undefined
+  serviceLines: InvoiceServiceLineForm[]
+  vaccineLines: InvoiceVaccineLineForm[]
+  servicesTotalCents: number
+  vaccinesTotalCents: number
+  grandTotalCents: number
+  isPaid: boolean
+  paidAt: string | null
 }
 
 export interface MilestoneRecord {

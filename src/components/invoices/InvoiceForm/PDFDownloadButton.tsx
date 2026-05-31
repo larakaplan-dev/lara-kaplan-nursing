@@ -3,7 +3,8 @@
 import { PDFDownloadLink } from '@react-pdf/renderer'
 import { Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { InvoiceDocument, type InvoicePDFData } from '@/components/invoices/InvoicePDF/InvoiceDocument'
+import { InvoiceDocument } from '@/components/invoices/InvoicePDF/InvoiceDocument'
+import type { InvoicePDFData } from '@/types'
 
 export default function PDFDownloadButton({ invoiceData }: { invoiceData: InvoicePDFData }) {
   return (
@@ -14,7 +15,7 @@ export default function PDFDownloadButton({ invoiceData }: { invoiceData: Invoic
       {({ loading }) => (
         <Button variant="outline" disabled={loading}>
           <Download className="w-4 h-4 mr-1" />
-          {loading ? 'Generating…' : 'Preview PDF'}
+          {loading ? 'Generating…' : invoiceData.isPaid ? 'Download Receipt' : 'Preview PDF'}
         </Button>
       )}
     </PDFDownloadLink>

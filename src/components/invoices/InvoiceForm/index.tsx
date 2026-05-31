@@ -225,6 +225,8 @@ export function InvoiceBuilder({ preselectedPatientId }: InvoiceBuilderProps) {
     servicesTotalCents,
     vaccinesTotalCents,
     grandTotalCents: grandTotal,
+    isPaid: false,
+    paidAt: null,
   } : null
 
   return (

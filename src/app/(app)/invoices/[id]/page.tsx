@@ -13,7 +13,7 @@ import { ChevronLeft } from 'lucide-react'
 import { formatZAR, formatDate } from '@/lib/utils'
 import { toast } from 'sonner'
 import type { Invoice } from '@/types'
-import type { InvoicePDFData } from '@/components/invoices/InvoicePDF/InvoiceDocument'
+import type { InvoicePDFData } from '@/types'
 import { BANKING } from '@/lib/practiceConfig'
 
 const PDFDownloadButton = dynamic(() => import('@/components/invoices/InvoiceForm/PDFDownloadButton'), { ssr: false })
@@ -76,6 +76,8 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
     servicesTotalCents: invoice.services_total_cents,
     vaccinesTotalCents: invoice.vaccines_total_cents,
     grandTotalCents: invoice.grand_total_cents,
+    isPaid: invoice.status === 'paid',
+    paidAt: invoice.paid_at ?? null,
   } : null
 
   if (isLoading) return <div className="p-6 text-muted-foreground">Loading…</div>
