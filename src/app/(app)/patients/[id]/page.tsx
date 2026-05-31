@@ -15,6 +15,7 @@ import { formatDate, ageLabel, weightDisplay } from '@/lib/utils'
 import type { Patient } from '@/types'
 import { GrowthTab } from '@/components/growth/GrowthTab'
 import { VaccinationsTab } from '@/components/vaccinations/VaccinationsTab'
+import { MilestonesTab } from '@/components/milestones/MilestonesTab'
 import { PatientInvoicesTab } from '@/components/invoices/PatientInvoicesTab'
 
 function InfoRow({ label, value }: { label: string; value: string | number | null | undefined }) {
@@ -140,6 +141,7 @@ export default function PatientProfilePage({ params }: { params: Promise<{ id: s
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="growth">Growth Chart</TabsTrigger>
           <TabsTrigger value="vaccinations">Vaccinations</TabsTrigger>
+          <TabsTrigger value="milestones">Milestones</TabsTrigger>
           <TabsTrigger value="invoices">Invoices</TabsTrigger>
         </TabsList>
 
@@ -229,6 +231,11 @@ export default function PatientProfilePage({ params }: { params: Promise<{ id: s
         {/* VACCINATIONS */}
         <TabsContent value="vaccinations">
           <VaccinationsTab patientId={id} />
+        </TabsContent>
+
+        {/* MILESTONES */}
+        <TabsContent value="milestones">
+          <MilestonesTab patientId={id} dob={patient.baby_dob} />
         </TabsContent>
 
         {/* INVOICES */}

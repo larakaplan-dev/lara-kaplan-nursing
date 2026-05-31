@@ -246,6 +246,23 @@ export type InvoiceVaccineLineForm = {
   vaccination_record_id?: string
 }
 
+export interface MilestoneRecord {
+  id: string
+  patient_id: string
+  milestone_key: string
+  checked_at: string
+  created_at: string
+}
+
+export interface MilestoneNote {
+  id: string
+  patient_id: string
+  age_group_key: string
+  note: string
+  updated_at: string
+  created_at: string
+}
+
 export interface AuditLog {
   id: string
   action: 'CREATE' | 'UPDATE' | 'DELETE' | 'RESTORE'
