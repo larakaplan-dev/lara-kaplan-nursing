@@ -91,30 +91,58 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ rawText, ...extracted })
   }
 
-  // Image path: one or more images — call Vision once per image, concatenate with page markers
+  // Mixed path: one or more files — PDFs use files:annotate, images use images:annotate
   const pageTexts: string[] = []
   for (const file of files) {
     const imageBase64 = Buffer.from(await file.arrayBuffer()).toString('base64')
 
-    const visionRes = await fetch(
-      `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`,
-      {
-        method: 'POST',
-        signal: AbortSignal.timeout(30_000),
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          requests: [{ image: { content: imageBase64 }, features: [{ type: 'DOCUMENT_TEXT_DETECTION' }] }],
-        }),
+    if (file.type === 'application/pdf') {
+      const visionRes = await fetch(
+        `https://vision.googleapis.com/v1/files:annotate?key=${apiKey}`,
+        {
+          method: 'POST',
+          signal: AbortSignal.timeout(55_000),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            requests: [{
+              inputConfig: { content: imageBase64, mimeType: 'application/pdf' },
+              features: [{ type: 'DOCUMENT_TEXT_DETECTION' }],
+              pages: [1, 2, 3, 4, 5],
+            }],
+          }),
+        }
+      )
+
+      if (!visionRes.ok) {
+        const err = await visionRes.text()
+        return NextResponse.json({ error: `Vision API error: ${err}` }, { status: 500 })
       }
-    )
 
-    if (!visionRes.ok) {
-      const err = await visionRes.text()
-      return NextResponse.json({ error: `Vision API error: ${err}` }, { status: 500 })
+      const visionData = await visionRes.json()
+      const pageResponses: Array<{ fullTextAnnotation?: { text?: string } }> =
+        visionData.responses?.[0]?.responses ?? []
+      pageTexts.push(pageResponses.map(p => p.fullTextAnnotation?.text ?? '').join('\n'))
+    } else {
+      const visionRes = await fetch(
+        `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`,
+        {
+          method: 'POST',
+          signal: AbortSignal.timeout(30_000),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            requests: [{ image: { content: imageBase64 }, features: [{ type: 'DOCUMENT_TEXT_DETECTION' }] }],
+          }),
+        }
+      )
+
+      if (!visionRes.ok) {
+        const err = await visionRes.text()
+        return NextResponse.json({ error: `Vision API error: ${err}` }, { status: 500 })
+      }
+
+      const visionData = await visionRes.json()
+      pageTexts.push(visionData.responses?.[0]?.fullTextAnnotation?.text ?? '')
     }
-
-    const visionData = await visionRes.json()
-    pageTexts.push(visionData.responses?.[0]?.fullTextAnnotation?.text ?? '')
   }
 
   const rawText = pageTexts
