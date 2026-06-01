@@ -6,14 +6,27 @@ export interface GrowthPoint {
   value: number
 }
 
+const MAX_MONTHS = 24
+const MS_PER_MONTH = (365.25 / 12) * 24 * 60 * 60 * 1000
+
 export function buildGrowthPoints(
   entries: GrowthEntry[],
   metric: 'weight' | 'length' | 'hc',
+  dob?: string | null,
 ): GrowthPoint[] {
   const points: GrowthPoint[] = []
 
   for (const e of entries) {
-    const ageMonths = normaliseAgeMonths(e)
+    let ageMonths = normaliseAgeMonths(e)
+
+    if (ageMonths === null && dob && e.measurement_date) {
+      const ms = new Date(e.measurement_date).getTime() - new Date(dob).getTime()
+      if (ms > 0) {
+        const computed = ms / MS_PER_MONTH
+        if (computed <= MAX_MONTHS) ageMonths = computed
+      }
+    }
+
     if (ageMonths === null) continue
 
     let value: number | null

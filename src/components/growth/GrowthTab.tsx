@@ -24,6 +24,7 @@ import type { GrowthEntry, GrowthEntryFormData } from '@/types'
 interface GrowthTabProps {
   patientId: string
   sex: 'male' | 'female' | null
+  dob: string | null
 }
 
 const PERCENTILES = ['p3', 'p10', 'p25', 'p50', 'p75', 'p90', 'p97'] as const
@@ -74,10 +75,11 @@ interface MetricChartProps {
   entries: GrowthEntry[]
   sex: 'male' | 'female' | null
   patientId: string
+  dob: string | null
 }
 
-function MetricChart({ title, metric, unit, color, yDomain, entries, sex, patientId }: MetricChartProps) {
-  const points = buildGrowthPoints(entries, metric)
+function MetricChart({ title, metric, unit, color, yDomain, entries, sex, patientId, dob }: MetricChartProps) {
+  const points = buildGrowthPoints(entries, metric, dob)
 
   // Build WHO reference lines as individual segment pairs for each percentile
   const whoLineData: Array<{ month: number } & Record<Percentile, number>> =
@@ -204,7 +206,7 @@ function MetricChart({ title, metric, unit, color, yDomain, entries, sex, patien
   )
 }
 
-export function GrowthTab({ patientId, sex }: GrowthTabProps) {
+export function GrowthTab({ patientId, sex, dob }: GrowthTabProps) {
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const queryClient = useQueryClient()
@@ -317,6 +319,7 @@ export function GrowthTab({ patientId, sex }: GrowthTabProps) {
         entries={entries}
         sex={sex}
         patientId={patientId}
+        dob={dob}
       />
       <MetricChart
         title="Length-for-Age"
@@ -327,6 +330,7 @@ export function GrowthTab({ patientId, sex }: GrowthTabProps) {
         entries={entries}
         sex={sex}
         patientId={patientId}
+        dob={dob}
       />
       <MetricChart
         title="Head Circumference-for-Age"
@@ -337,6 +341,7 @@ export function GrowthTab({ patientId, sex }: GrowthTabProps) {
         entries={entries}
         sex={sex}
         patientId={patientId}
+        dob={dob}
       />
 
       {/* Table */}

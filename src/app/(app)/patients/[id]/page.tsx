@@ -225,7 +225,7 @@ export default function PatientProfilePage({ params }: { params: Promise<{ id: s
 
         {/* GROWTH */}
         <TabsContent value="growth">
-          <GrowthTab patientId={id} sex={patient.sex} />
+          <GrowthTab patientId={id} sex={patient.sex} dob={patient.baby_dob} />
         </TabsContent>
 
         {/* VACCINATIONS */}
