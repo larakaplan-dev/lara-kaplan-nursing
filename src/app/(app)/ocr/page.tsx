@@ -76,7 +76,7 @@ export default function OCRPage() {
   const parents = parentsData?.parents ?? []
   const selectedExistingParent = parents.find(p => p.id === existingParentId)
 
-  const MAX_PAGES = 4
+  const MAX_PAGES = 5
   const hasResults = parentFields !== null
 
   const addFile = (f: File) => {
