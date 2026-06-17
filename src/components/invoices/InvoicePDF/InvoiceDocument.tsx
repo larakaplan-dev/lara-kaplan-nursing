@@ -11,7 +11,7 @@ const s = StyleSheet.create({
   page: { padding: 40, fontFamily: 'Helvetica', fontSize: 9, color: '#0f172a' },
   // Header
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, paddingBottom: 8, borderBottomWidth: 2, borderBottomColor: TEAL },
-  logo: { width: 90, height: 90, objectFit: 'contain' },
+  logo: { width: 130, height: 80, objectFit: 'contain' },
   practiceName: { fontSize: 13, fontFamily: 'Helvetica-Bold', color: TEAL },
   practiceDetail: { fontSize: 8, color: GREY, marginTop: 2 },
   invoiceInfo: { marginBottom: 20 },
@@ -72,11 +72,11 @@ export function InvoiceDocument({ data }: { data: InvoicePDFData }) {
         {/* Header */}
         <View style={s.header}>
           <View>
-            <Text style={s.practiceName}>{PRACTICE.name}</Text>
-            <Text style={s.practiceDetail}>Registered Nurse</Text>
+            <Text style={s.practiceName}>Lara Kaplan</Text>
+            <Text style={s.practiceDetail}>Registered Nurse and Midwife</Text>
             <Text style={s.practiceDetail}>Practice No. {PRACTICE.number}</Text>
           </View>
-          <Image style={s.logo} src={`${typeof window !== 'undefined' ? window.location.origin : ''}/logo.png`} />
+          <Image style={s.logo} src={`${typeof window !== 'undefined' ? window.location.origin : ''}/logo-cropped.png`} />
         </View>
 
         {/* Invoice Info */}
