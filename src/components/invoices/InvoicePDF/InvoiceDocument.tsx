@@ -10,12 +10,13 @@ const GREY = '#64748b'
 const s = StyleSheet.create({
   page: { padding: 40, fontFamily: 'Helvetica', fontSize: 9, color: '#0f172a' },
   // Header
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20, paddingBottom: 8, borderBottomWidth: 2, borderBottomColor: TEAL },
-  logo: { width: 110, height: 110, objectFit: 'contain' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, paddingBottom: 8, borderBottomWidth: 2, borderBottomColor: TEAL },
+  logo: { width: 90, height: 90, objectFit: 'contain' },
   practiceName: { fontSize: 13, fontFamily: 'Helvetica-Bold', color: TEAL },
   practiceDetail: { fontSize: 8, color: GREY, marginTop: 2 },
-  invoiceTitle: { fontSize: 13, fontFamily: 'Helvetica-Bold', color: TEAL, textAlign: 'right' },
-  invoiceMeta: { fontSize: 8, color: GREY, textAlign: 'right', marginTop: 2 },
+  invoiceInfo: { marginBottom: 20 },
+  invoiceTitle: { fontSize: 13, fontFamily: 'Helvetica-Bold', color: TEAL },
+  invoiceMeta: { fontSize: 8, color: GREY, marginTop: 2 },
   // Patient
   patientSection: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
   patientBlock: { flex: 1 },
@@ -72,18 +73,17 @@ export function InvoiceDocument({ data }: { data: InvoicePDFData }) {
         <View style={s.header}>
           <View>
             <Text style={s.practiceName}>{PRACTICE.name}</Text>
+            <Text style={s.practiceDetail}>Registered Nurse</Text>
             <Text style={s.practiceDetail}>Practice No. {PRACTICE.number}</Text>
-            <Text style={s.practiceDetail}>{PRACTICE.address}</Text>
-            <Text style={s.practiceDetail}>{PRACTICE.clinic}</Text>
-            <Text style={s.practiceDetail}>Tel: {PRACTICE.phone}</Text>
-            <Text style={s.practiceDetail}>{PRACTICE.email}</Text>
           </View>
-          <View style={{ alignItems: 'flex-end' }}>
-            <Image style={s.logo} src={`${typeof window !== 'undefined' ? window.location.origin : ''}/logo.png`} />
-            <Text style={s.invoiceTitle}>INVOICE</Text>
-            <Text style={s.invoiceMeta}>{data.invoiceNumber}</Text>
-            <Text style={s.invoiceMeta}>Date: {formatDate(data.invoiceDate)}</Text>
-          </View>
+          <Image style={s.logo} src={`${typeof window !== 'undefined' ? window.location.origin : ''}/logo.png`} />
+        </View>
+
+        {/* Invoice Info */}
+        <View style={s.invoiceInfo}>
+          <Text style={s.invoiceTitle}>INVOICE</Text>
+          <Text style={s.invoiceMeta}>{data.invoiceNumber}</Text>
+          <Text style={s.invoiceMeta}>Date: {formatDate(data.invoiceDate)}</Text>
         </View>
 
         {/* Notice */}
@@ -203,7 +203,7 @@ export function InvoiceDocument({ data }: { data: InvoicePDFData }) {
         {/* Footer */}
         <View style={s.footer} fixed>
           <Text style={s.footerText}>
-            {PRACTICE.name}, Registered Nurse and Midwife · Practice No. {PRACTICE.number} · {PRACTICE.clinic} · {PRACTICE.phone} · {PRACTICE.email}
+            {PRACTICE.clinic} · {PRACTICE.phone} · {PRACTICE.email}
           </Text>
         </View>
       </Page>
