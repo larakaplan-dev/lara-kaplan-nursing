@@ -118,7 +118,7 @@ export function InvoiceDocument({ data }: { data: InvoicePDFData }) {
               <Text style={[s.tableHeaderText, { flex: 1 }]}>Description</Text>
               <Text style={[s.tableHeaderText, { width: '12%' }]}>ICD-10</Text>
               <Text style={[s.tableHeaderText, { width: '12%' }]}>Code</Text>
-              <Text style={[s.tableHeaderText, { width: '15%', textAlign: 'right' }]}>Total</Text>
+              <Text style={[s.tableHeaderText, { width: '15%', textAlign: 'right' }]}>Amount</Text>
             </View>
             {data.serviceLines.map((line, i) => (
               <View key={i} style={[s.tableRow, i % 2 === 1 ? s.tableRowAlt : {}]}>

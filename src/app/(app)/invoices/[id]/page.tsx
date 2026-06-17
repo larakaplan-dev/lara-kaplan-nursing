@@ -139,7 +139,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
               <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead><tr className="border-b border-border">
-                  {['Date', 'Description', 'ICD-10', 'Code', 'Total'].map(h => (
+                  {['Date', 'Description', 'ICD-10', 'Code', 'Amount'].map(h => (
                     <th key={h} className="px-5 py-2 text-left text-xs font-medium text-muted-foreground">{h}</th>
                   ))}
                 </tr></thead>
