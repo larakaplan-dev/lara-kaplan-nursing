@@ -6,7 +6,7 @@ vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: vi.fn() }))
 vi.mock('@/lib/audit', () => ({ logAudit: vi.fn() }))
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { GET } from '../route'
+import { GET, PUT } from '../route'
 
 const VALID_ID = '87654321-4321-4321-8321-210987654321'
 const INVALID_ID = 'not-a-uuid'
@@ -25,6 +25,7 @@ const PATIENT = {
   parent: PARENT,
   baby_name: 'Baby Smith',
   baby_dob: '2026-01-01',
+  sex: 'female' as const,
   deleted_at: null,
   created_at: '2026-01-01T00:00:00Z',
 }
@@ -38,6 +39,68 @@ function params(id: string) {
 }
 
 beforeEach(() => vi.clearAllMocks())
+
+// ── PUT /api/patients/[id] ─────────────────────────────────────────────────────
+
+describe('PUT /api/patients/[id]', () => {
+  it('accepts sex: male', async () => {
+    vi.mocked(createAdminClient).mockReturnValue(
+      makeClient({ data: { ...PATIENT, sex: 'male' }, error: null }) as ReturnType<typeof createAdminClient>
+    )
+    const res = await PUT(
+      req(`http://localhost/api/patients/${VALID_ID}`, {
+        method: 'PUT',
+        body: JSON.stringify({ sex: 'male' }),
+      }),
+      params(VALID_ID),
+    )
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.patient.sex).toBe('male')
+  })
+
+  it('accepts sex: female', async () => {
+    vi.mocked(createAdminClient).mockReturnValue(
+      makeClient({ data: { ...PATIENT, sex: 'female' }, error: null }) as ReturnType<typeof createAdminClient>
+    )
+    const res = await PUT(
+      req(`http://localhost/api/patients/${VALID_ID}`, {
+        method: 'PUT',
+        body: JSON.stringify({ sex: 'female' }),
+      }),
+      params(VALID_ID),
+    )
+    expect(res.status).toBe(200)
+  })
+
+  it('accepts sex: null', async () => {
+    vi.mocked(createAdminClient).mockReturnValue(
+      makeClient({ data: { ...PATIENT, sex: null }, error: null }) as ReturnType<typeof createAdminClient>
+    )
+    const res = await PUT(
+      req(`http://localhost/api/patients/${VALID_ID}`, {
+        method: 'PUT',
+        body: JSON.stringify({ sex: null }),
+      }),
+      params(VALID_ID),
+    )
+    expect(res.status).toBe(200)
+  })
+
+  it('rejects invalid sex value', async () => {
+    vi.mocked(createAdminClient).mockReturnValue(
+      makeClient({ data: null, error: null }) as ReturnType<typeof createAdminClient>
+    )
+    const res = await PUT(
+      req(`http://localhost/api/patients/${VALID_ID}`, {
+        method: 'PUT',
+        body: JSON.stringify({ sex: 'other' }),
+      }),
+      params(VALID_ID),
+    )
+    expect(res.status).toBe(400)
+  })
+})
 
 // ── GET /api/patients/[id] ─────────────────────────────────────────────────────
 
@@ -60,6 +123,15 @@ describe('GET /api/patients/[id]', () => {
     )
     const res = await GET(req(`http://localhost/api/patients/${INVALID_ID}`), params(INVALID_ID))
     expect(res.status).toBe(400)
+  })
+
+  it('returns sex field in patient response', async () => {
+    vi.mocked(createAdminClient).mockReturnValue(
+      makeClient({ data: PATIENT, error: null }) as ReturnType<typeof createAdminClient>
+    )
+    const res = await GET(req(`http://localhost/api/patients/${VALID_ID}`), params(VALID_ID))
+    const body = await res.json()
+    expect(body.patient.sex).toBe('female')
   })
 
   it('selects parent fields via join', async () => {

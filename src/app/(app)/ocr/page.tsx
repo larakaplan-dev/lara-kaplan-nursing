@@ -53,8 +53,8 @@ const CHILD_FIELD_META: Array<{ key: keyof PatientFormData; label: string; type?
 export default function OCRPage() {
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
-  const [file, setFile] = useState<File | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [files, setFiles] = useState<File[]>([])
+  const [previewUrls, setPreviewUrls] = useState<string[]>([])
   const [scanning, setScanning] = useState(false)
   const [saving, setSaving] = useState(false)
 
@@ -76,32 +76,50 @@ export default function OCRPage() {
   const parents = parentsData?.parents ?? []
   const selectedExistingParent = parents.find(p => p.id === existingParentId)
 
+  const MAX_PAGES = 5
   const hasResults = parentFields !== null
 
-  const handleFile = (f: File) => {
-    setFile(f)
+  const addFile = (f: File) => {
+    setFiles(prev => {
+      if (prev.length >= MAX_PAGES) return prev
+      const url = URL.createObjectURL(f)
+      setPreviewUrls(p => [...p, url])
+      return [...prev, f]
+    })
+  }
+
+  const removeFile = (idx: number) => {
+    setPreviewUrls(prev => {
+      URL.revokeObjectURL(prev[idx])
+      return prev.filter((_, i) => i !== idx)
+    })
+    setFiles(prev => prev.filter((_, i) => i !== idx))
+  }
+
+  const resetAll = () => {
+    previewUrls.forEach(u => URL.revokeObjectURL(u))
+    setFiles([])
+    setPreviewUrls([])
     setParentFields(null)
     setChildFields(null)
     setGrowthEntries([])
     setVaccinations([])
     setRawText('')
     setExistingParentId(undefined)
-    const url = URL.createObjectURL(f)
-    setPreviewUrl(url)
   }
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     const f = e.dataTransfer.files[0]
-    if (f) handleFile(f)
+    if (f) addFile(f)
   }
 
   const handleScan = async () => {
-    if (!file) return
+    if (files.length === 0) return
     setScanning(true)
     try {
       const fd = new FormData()
-      fd.append('file', file)
+      for (const f of files) fd.append('file', f)
       const res = await fetch('/api/ocr', { method: 'POST', body: fd })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error)
@@ -171,27 +189,29 @@ export default function OCRPage() {
         <div className="max-w-2xl space-y-4">
           <Card
             className={`border-2 border-dashed transition-colors cursor-pointer
-              ${file ? 'border-primary/40 bg-primary/5' : 'border-border hover:border-primary/30'}`}
+              ${files.length > 0 ? 'border-primary/40 bg-primary/5' : 'border-border hover:border-primary/30'}`}
             onDrop={handleDrop}
             onDragOver={e => e.preventDefault()}
-            onClick={() => inputRef.current?.click()}
+            onClick={() => files.length < MAX_PAGES && inputRef.current?.click()}
           >
             <CardContent className="py-10 flex flex-col items-center gap-3 text-center">
-              {file ? (
-                <>
-                  <CheckCircle2 className="w-10 h-10 text-primary" />
-                  <p className="text-sm font-medium">{file.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {(file.size / 1024).toFixed(0)} KB · Click to change
-                  </p>
-                </>
-              ) : (
+              {files.length === 0 ? (
                 <>
                   <Upload className="w-10 h-10 text-muted-foreground" />
                   <div>
                     <p className="text-sm font-medium">Drop PDF or image here</p>
                     <p className="text-xs text-muted-foreground mt-1">or click to browse · PDF, JPG, PNG</p>
                   </div>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-10 h-10 text-primary" />
+                  <p className="text-sm font-medium">
+                    {files.length} page{files.length > 1 ? 's' : ''} queued
+                  </p>
+                  {files.length < MAX_PAGES && (
+                    <p className="text-xs text-muted-foreground">Click to add another page</p>
+                  )}
                 </>
               )}
             </CardContent>
@@ -201,27 +221,61 @@ export default function OCRPage() {
             type="file"
             className="hidden"
             accept=".pdf,.jpg,.jpeg,.png,.webp"
-            onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
+            onChange={e => {
+              const f = e.target.files?.[0]
+              if (f) { addFile(f); e.target.value = '' }
+            }}
           />
 
-          {file && !hasResults && (
-            <Button className="w-full" onClick={handleScan} disabled={scanning}>
-              {scanning
-                ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Scanning…</>
-                : <><ScanLine className="w-4 h-4 mr-2" />Scan with OCR</>
-              }
-            </Button>
-          )}
+          {/* Thumbnail strip */}
+          {files.length > 0 && !hasResults && (
+            <div className="space-y-3">
+              {files[0].type !== 'application/pdf' && (
+                <div className="flex gap-3 flex-wrap">
+                  {files.map((f, idx) => (
+                    <div key={idx} className="relative group">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={previewUrls[idx]}
+                        alt={`Page ${idx + 1}`}
+                        className="w-20 h-24 object-cover rounded-lg border border-border"
+                      />
+                      <span className="absolute bottom-1 left-1 text-[10px] font-medium bg-black/60 text-white rounded px-1">
+                        p{idx + 1}
+                      </span>
+                      <button
+                        onClick={() => removeFile(idx)}
+                        className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        aria-label={`Remove page ${idx + 1}`}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                  {files.length < MAX_PAGES && (
+                    <button
+                      onClick={() => inputRef.current?.click()}
+                      className="w-20 h-24 rounded-lg border-2 border-dashed border-border hover:border-primary/40 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      <Upload className="w-4 h-4" />
+                      <span className="text-[10px] font-medium">Add page</span>
+                    </button>
+                  )}
+                </div>
+              )}
 
-          {previewUrl && file?.type !== 'application/pdf' && (
-            <div className="rounded-lg overflow-hidden border border-border">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={previewUrl} alt="Uploaded form" className="w-full object-contain max-h-[400px]" />
-            </div>
-          )}
-          {previewUrl && file?.type === 'application/pdf' && (
-            <div className="rounded-lg overflow-hidden border border-border bg-muted/30 h-[300px]">
-              <iframe src={previewUrl} className="w-full h-full" title="PDF preview" />
+              {files[0].type === 'application/pdf' && (
+                <div className="rounded-lg overflow-hidden border border-border bg-muted/30 h-[300px]">
+                  <iframe src={previewUrls[0]} className="w-full h-full" title="PDF preview" />
+                </div>
+              )}
+
+              <Button className="w-full" onClick={handleScan} disabled={scanning}>
+                {scanning
+                  ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Scanning…</>
+                  : <><ScanLine className="w-4 h-4 mr-2" />Scan {files.length > 1 ? `${files.length} pages` : 'with OCR'}</>
+                }
+              </Button>
             </div>
           )}
         </div>
@@ -237,12 +291,7 @@ export default function OCRPage() {
               <Button variant="outline" onClick={handleScan} disabled={scanning}>
                 {scanning ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Rescanning…</> : <><ScanLine className="w-4 h-4 mr-2" />Rescan</>}
               </Button>
-              <Button variant="ghost" onClick={() => {
-                setParentFields(null); setChildFields(null)
-                setGrowthEntries([]); setVaccinations([])
-                setRawText(''); setFile(null); setPreviewUrl(null)
-                setExistingParentId(undefined)
-              }}>
+              <Button variant="ghost" onClick={resetAll}>
                 Reset
               </Button>
               <span className="text-xs text-muted-foreground ml-auto">

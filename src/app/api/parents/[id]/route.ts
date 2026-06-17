@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { logAudit } from '@/lib/audit'
+import { getParent, updateParent, archiveParent, restoreParent } from '@/lib/db/parents'
 
 const UUID = z.string().uuid()
 
@@ -25,16 +25,10 @@ const UpdateParentSchema = z.object({
 type RouteContext = { params: Promise<{ id: string }> }
 
 export async function GET(_req: NextRequest, { params }: RouteContext) {
-  const supabase = createAdminClient()
   const { id } = await params
   if (!UUID.safeParse(id).success) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
 
-  const { data, error } = await supabase
-    .from('parents')
-    .select('*')
-    .eq('id', id)
-    .single()
-
+  const { data, error } = await getParent(id)
   if (error) {
     const status = error.code === 'PGRST116' ? 404 : 500
     return NextResponse.json({ error: error.message }, { status })
@@ -43,7 +37,6 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
 }
 
 export async function PATCH(req: NextRequest, { params }: RouteContext) {
-  const supabase = createAdminClient()
   const { id } = await params
   if (!UUID.safeParse(id).success) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
 
@@ -51,57 +44,34 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
   const parsed = UpdateParentSchema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
-  const { data, error } = await supabase
-    .from('parents')
-    .update(parsed.data)
-    .eq('id', id)
-    .select()
-    .single()
-
+  const { data, error } = await updateParent(id, parsed.data)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  await logAudit(supabase, 'UPDATE', 'parents', id, data.client_name)
-
+  await logAudit('UPDATE', 'parents', id, data.client_name)
   return NextResponse.json({ parent: data })
 }
 
 export async function DELETE(req: NextRequest, { params }: RouteContext) {
-  const supabase = createAdminClient()
   const { id } = await params
   if (!UUID.safeParse(id).success) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
 
   const body = await req.json().catch(() => ({}))
   const reason: string | undefined = body.reason
 
-  const { data, error } = await supabase
-    .from('parents')
-    .update({ deleted_at: new Date().toISOString(), deletion_reason: reason ?? null })
-    .eq('id', id)
-    .select('client_name')
-    .single()
-
+  const { data, error } = await archiveParent(id, reason)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  await logAudit(supabase, 'DELETE', 'parents', id, data.client_name, reason ? { reason } : undefined)
-
+  await logAudit('DELETE', 'parents', id, data.client_name, reason ? { reason } : undefined)
   return NextResponse.json({ success: true })
 }
 
 export async function PUT(_req: NextRequest, { params }: RouteContext) {
-  const supabase = createAdminClient()
   const { id } = await params
   if (!UUID.safeParse(id).success) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
 
-  const { data, error } = await supabase
-    .from('parents')
-    .update({ deleted_at: null, deletion_reason: null })
-    .eq('id', id)
-    .select()
-    .single()
-
+  const { data, error } = await restoreParent(id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  await logAudit(supabase, 'RESTORE', 'parents', id, data.client_name)
-
+  await logAudit('RESTORE', 'parents', id, data.client_name)
   return NextResponse.json({ parent: data })
 }

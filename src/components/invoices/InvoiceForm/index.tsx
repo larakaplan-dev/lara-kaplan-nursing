@@ -169,6 +169,11 @@ export function InvoiceBuilder({ preselectedPatientId }: InvoiceBuilderProps) {
       toast.error('Add at least one service or vaccine line')
       return
     }
+    const patientName = selectedChild?.baby_name || selectedParent?.client_name || null
+    if (!patientName) {
+      toast.error('Patient data is still loading — please wait a moment and try again')
+      return
+    }
     setSaving(true)
     try {
       const body = {
@@ -220,6 +225,8 @@ export function InvoiceBuilder({ preselectedPatientId }: InvoiceBuilderProps) {
     servicesTotalCents,
     vaccinesTotalCents,
     grandTotalCents: grandTotal,
+    isPaid: false,
+    paidAt: null,
   } : null
 
   return (
@@ -355,13 +362,20 @@ export function InvoiceBuilder({ preselectedPatientId }: InvoiceBuilderProps) {
                     <Label className="text-xs">Description</Label>
                     <Input value={line.description} onChange={e => updateServiceLine(i, 'description', e.target.value)} className="text-xs h-9" />
                   </div>
-                  <div className="sm:col-span-2 space-y-1">
+                  <div className="sm:col-span-1 space-y-1">
                     <Label className="text-xs">ICD-10</Label>
                     <Input value={line.icd10_code} onChange={e => updateServiceLine(i, 'icd10_code', e.target.value)} className="text-xs h-9" placeholder="Z00.1" />
                   </div>
-                  <div className="sm:col-span-1 space-y-1">
-                    <Label className="text-xs">Price</Label>
-                    <p className="text-xs font-medium h-9 flex items-center">{formatZAR(line.unit_price_cents)}</p>
+                  <div className="sm:col-span-2 space-y-1">
+                    <Label className="text-xs">Price (R)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={line.unit_price_cents / 100}
+                      onChange={e => updateServiceLine(i, 'unit_price_cents', Math.round(parseFloat(e.target.value || '0') * 100))}
+                      className="text-xs h-9"
+                    />
                   </div>
                   <div className="sm:col-span-1 flex justify-end pb-0.5">
                     <button onClick={() => setServiceLines(prev => prev.filter((_, j) => j !== i))}
@@ -404,7 +418,7 @@ export function InvoiceBuilder({ preselectedPatientId }: InvoiceBuilderProps) {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="sm:col-span-2 space-y-1">
+                  <div className="sm:col-span-1 space-y-1">
                     <Label className="text-xs">ICD-10</Label>
                     <Input value={line.icd10_code} onChange={e => updateVaccineLine(i, 'icd10_code', e.target.value)} className="text-xs h-9" />
                   </div>
@@ -412,11 +426,13 @@ export function InvoiceBuilder({ preselectedPatientId }: InvoiceBuilderProps) {
                     <Label className="text-xs">NAPPI</Label>
                     <Input value={line.nappi_code} onChange={e => updateVaccineLine(i, 'nappi_code', e.target.value)} className="text-xs h-9" />
                   </div>
-                  <div className="sm:col-span-2 space-y-1">
+                  <div className="sm:col-span-3 space-y-1">
                     <Label className="text-xs">Price (R)</Label>
                     <Input
                       type="number"
-                      value={(line.unit_price_cents / 100).toFixed(2)}
+                      step="0.01"
+                      min="0"
+                      value={line.unit_price_cents / 100}
                       onChange={e => updateVaccineLine(i, 'unit_price_cents', Math.round(parseFloat(e.target.value || '0') * 100))}
                       className="text-xs h-9"
                     />

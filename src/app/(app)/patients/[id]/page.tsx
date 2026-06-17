@@ -15,6 +15,7 @@ import { formatDate, ageLabel, weightDisplay } from '@/lib/utils'
 import type { Patient } from '@/types'
 import { GrowthTab } from '@/components/growth/GrowthTab'
 import { VaccinationsTab } from '@/components/vaccinations/VaccinationsTab'
+import { MilestonesTab } from '@/components/milestones/MilestonesTab'
 import { PatientInvoicesTab } from '@/components/invoices/PatientInvoicesTab'
 
 function InfoRow({ label, value }: { label: string; value: string | number | null | undefined }) {
@@ -140,6 +141,7 @@ export default function PatientProfilePage({ params }: { params: Promise<{ id: s
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="growth">Growth Chart</TabsTrigger>
           <TabsTrigger value="vaccinations">Vaccinations</TabsTrigger>
+          <TabsTrigger value="milestones">Milestones</TabsTrigger>
           <TabsTrigger value="invoices">Invoices</TabsTrigger>
         </TabsList>
 
@@ -183,6 +185,7 @@ export default function PatientProfilePage({ params }: { params: Promise<{ id: s
               </CardHeader>
               <CardContent className="space-y-2">
                 <InfoRow label="Place of Birth" value={patient.place_of_birth} />
+                <InfoRow label="Sex" value={patient.sex === 'male' ? 'Male' : patient.sex === 'female' ? 'Female' : null} />
                 <InfoRow label="Weeks Gestation" value={patient.weeks_gestation ? `${patient.weeks_gestation} weeks` : null} />
                 <InfoRow label="Mode of Delivery" value={patient.mode_of_delivery} />
                 <InfoRow label="Birth Weight" value={weightDisplay(patient.birth_weight_grams)} />
@@ -222,12 +225,17 @@ export default function PatientProfilePage({ params }: { params: Promise<{ id: s
 
         {/* GROWTH */}
         <TabsContent value="growth">
-          <GrowthTab patientId={id} />
+          <GrowthTab patientId={id} sex={patient.sex} dob={patient.baby_dob} />
         </TabsContent>
 
         {/* VACCINATIONS */}
         <TabsContent value="vaccinations">
           <VaccinationsTab patientId={id} />
+        </TabsContent>
+
+        {/* MILESTONES */}
+        <TabsContent value="milestones">
+          <MilestonesTab patientId={id} dob={patient.baby_dob} />
         </TabsContent>
 
         {/* INVOICES */}

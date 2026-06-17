@@ -35,6 +35,7 @@ export interface Patient {
   birth_weight_grams: number | null
   mode_of_delivery: 'NVD' | 'C-Section' | 'Assisted' | null
   discharge_weight_grams: number | null
+  sex: 'male' | 'female' | null
   paed_notes: string | null
   consent_date: string | null
   consent_name: string | null
@@ -102,6 +103,8 @@ export interface VaccinationRecord {
   site: string | null
   nappi_code: string | null
   price_cents: number | null
+  administered_by_third_party: boolean
+  third_party_notes: string | null
   created_at: string
 }
 
@@ -129,6 +132,7 @@ export interface Invoice {
   vaccines_total_cents: number
   grand_total_cents: number
   status: 'draft' | 'sent' | 'paid'
+  paid_at: string | null
   notes: string | null
   created_at: string
   updated_at: string
@@ -193,6 +197,7 @@ export type PatientFormData = {
   birth_weight_grams: string
   mode_of_delivery: string
   discharge_weight_grams: string
+  sex: string
   paed_notes: string
   consent_date: string
   consent_name: string
@@ -218,6 +223,8 @@ export type VaccinationFormData = {
   site: string
   nappi_code: string
   price_cents: string
+  administered_by_third_party: boolean
+  third_party_notes: string
 }
 
 export type InvoiceServiceLineForm = {
@@ -238,6 +245,41 @@ export type InvoiceVaccineLineForm = {
   unit_price_cents: number
   quantity: number
   vaccination_record_id?: string
+}
+
+export interface InvoicePDFData {
+  invoiceNumber: string
+  invoiceDate: string
+  patientName: string
+  patientDob: string | null | undefined
+  medicalAidName: string | null | undefined
+  medicalAidNumber: string | null | undefined
+  mainMemberName: string | null | undefined
+  mainMemberId: string | null | undefined
+  serviceLines: InvoiceServiceLineForm[]
+  vaccineLines: InvoiceVaccineLineForm[]
+  servicesTotalCents: number
+  vaccinesTotalCents: number
+  grandTotalCents: number
+  isPaid: boolean
+  paidAt: string | null
+}
+
+export interface MilestoneRecord {
+  id: string
+  patient_id: string
+  milestone_key: string
+  checked_at: string
+  created_at: string
+}
+
+export interface MilestoneNote {
+  id: string
+  patient_id: string
+  age_group_key: string
+  note: string
+  updated_at: string
+  created_at: string
 }
 
 export interface AuditLog {

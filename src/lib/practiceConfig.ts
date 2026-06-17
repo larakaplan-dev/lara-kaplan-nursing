@@ -3,11 +3,12 @@
 // Banking details intentionally not in env vars — this file is the config.
 
 export const PRACTICE = {
-  name: 'Lara Kaplan, Reg Nurse & Midwife',
+  name: 'Lara Kaplan, Reg. Nurse & Midwife',
   number: '0648949',
   address: '96 William Road Norwood',
   phone: '082 412 9135',
-  email: 'sisterlarak@outlook.com',
+  clinic: 'Norwood Clinic: 1545477',
+  email: 'nurselarak@outlook.com',
 } as const
 
 export const BANKING = {

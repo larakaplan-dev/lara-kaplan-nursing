@@ -13,7 +13,7 @@ import { ChevronLeft } from 'lucide-react'
 import { formatZAR, formatDate } from '@/lib/utils'
 import { toast } from 'sonner'
 import type { Invoice } from '@/types'
-import type { InvoicePDFData } from '@/components/invoices/InvoicePDF/InvoiceDocument'
+import type { InvoicePDFData } from '@/types'
 import { BANKING } from '@/lib/practiceConfig'
 
 const PDFDownloadButton = dynamic(() => import('@/components/invoices/InvoiceForm/PDFDownloadButton'), { ssr: false })
@@ -76,6 +76,8 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
     servicesTotalCents: invoice.services_total_cents,
     vaccinesTotalCents: invoice.vaccines_total_cents,
     grandTotalCents: invoice.grand_total_cents,
+    isPaid: invoice.status === 'paid',
+    paidAt: invoice.paid_at ?? null,
   } : null
 
   if (isLoading) return <div className="p-6 text-muted-foreground">Loading…</div>
@@ -137,7 +139,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
               <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead><tr className="border-b border-border">
-                  {['Date', 'Description', 'ICD-10', 'Code', 'Total'].map(h => (
+                  {['Date', 'Description', 'ICD-10', 'Code', 'Amount'].map(h => (
                     <th key={h} className="px-5 py-2 text-left text-xs font-medium text-muted-foreground">{h}</th>
                   ))}
                 </tr></thead>

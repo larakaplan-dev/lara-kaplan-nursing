@@ -1,6 +1,6 @@
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
+import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer'
 import { format } from 'date-fns'
-import type { InvoiceServiceLineForm, InvoiceVaccineLineForm } from '@/types'
+import type { InvoicePDFData } from '@/types'
 import { PRACTICE, BANKING } from '@/lib/practiceConfig'
 
 const TEAL = '#0f4c5c'
@@ -10,11 +10,13 @@ const GREY = '#64748b'
 const s = StyleSheet.create({
   page: { padding: 40, fontFamily: 'Helvetica', fontSize: 9, color: '#0f172a' },
   // Header
-  header: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20, paddingBottom: 14, borderBottomWidth: 2, borderBottomColor: TEAL },
-  practiceName: { fontSize: 15, fontFamily: 'Helvetica-Bold', color: TEAL },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4, paddingBottom: 2, borderBottomWidth: 2, borderBottomColor: TEAL },
+  logo: { width: 110, height: 68, objectFit: 'contain' },
+  practiceName: { fontSize: 13, fontFamily: 'Helvetica-Bold', color: TEAL },
   practiceDetail: { fontSize: 8, color: GREY, marginTop: 2 },
-  invoiceTitle: { fontSize: 20, fontFamily: 'Helvetica-Bold', color: TEAL, textAlign: 'right' },
-  invoiceMeta: { fontSize: 8, color: GREY, textAlign: 'right', marginTop: 2 },
+  invoiceInfo: { marginBottom: 14 },
+  invoiceTitle: { fontSize: 13, fontFamily: 'Helvetica-Bold', color: TEAL },
+  invoiceMeta: { fontSize: 8, color: GREY, marginTop: 2 },
   // Patient
   patientSection: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
   patientBlock: { flex: 1 },
@@ -48,6 +50,10 @@ const s = StyleSheet.create({
   // Footer
   footer: { position: 'absolute', bottom: 30, left: 40, right: 40, borderTopWidth: 0.5, borderTopColor: '#e2e8f0', paddingTop: 6 },
   footerText: { fontSize: 7, color: GREY, textAlign: 'center' },
+  // Paid stamp
+  stamp: { position: 'absolute', bottom: 80, left: 40, transform: 'rotate(-25deg)', borderWidth: 3, borderColor: '#dc2626', padding: '6 14', opacity: 0.85 },
+  stampText: { color: '#dc2626', fontFamily: 'Helvetica-Bold', fontSize: 28, letterSpacing: 2, textAlign: 'center' },
+  stampDate: { color: '#dc2626', fontSize: 9, textAlign: 'center', marginTop: 2 },
 })
 
 function formatZAR(cents: number) {
@@ -59,22 +65,6 @@ function formatDate(d: string | null | undefined) {
   try { return format(new Date(d), 'dd/MM/yyyy') } catch { return d }
 }
 
-export interface InvoicePDFData {
-  invoiceNumber: string
-  invoiceDate: string
-  patientName: string
-  patientDob: string | null | undefined
-  medicalAidName: string | null | undefined
-  medicalAidNumber: string | null | undefined
-  mainMemberName: string | null | undefined
-  mainMemberId: string | null | undefined
-  serviceLines: InvoiceServiceLineForm[]
-  vaccineLines: InvoiceVaccineLineForm[]
-  servicesTotalCents: number
-  vaccinesTotalCents: number
-  grandTotalCents: number
-}
-
 export function InvoiceDocument({ data }: { data: InvoicePDFData }) {
   return (
     <Document>
@@ -82,18 +72,18 @@ export function InvoiceDocument({ data }: { data: InvoicePDFData }) {
         {/* Header */}
         <View style={s.header}>
           <View>
-            <Text style={s.practiceName}>{PRACTICE.name}</Text>
+            <Text style={s.practiceName}>Lara Kaplan</Text>
             <Text style={s.practiceDetail}>Registered Nurse and Midwife</Text>
             <Text style={s.practiceDetail}>Practice No. {PRACTICE.number}</Text>
-            <Text style={s.practiceDetail}>{PRACTICE.address}</Text>
-            <Text style={s.practiceDetail}>Tel: {PRACTICE.phone}</Text>
-            <Text style={s.practiceDetail}>{PRACTICE.email}</Text>
           </View>
-          <View>
-            <Text style={s.invoiceTitle}>INVOICE</Text>
-            <Text style={s.invoiceMeta}>{data.invoiceNumber}</Text>
-            <Text style={s.invoiceMeta}>Date: {formatDate(data.invoiceDate)}</Text>
-          </View>
+          <Image style={s.logo} src={`${typeof window !== 'undefined' ? window.location.origin : ''}/logo-cropped.png`} />
+        </View>
+
+        {/* Invoice Info */}
+        <View style={s.invoiceInfo}>
+          <Text style={s.invoiceTitle}>INVOICE</Text>
+          <Text style={s.invoiceMeta}>{data.invoiceNumber}</Text>
+          <Text style={s.invoiceMeta}>Date: {formatDate(data.invoiceDate)}</Text>
         </View>
 
         {/* Notice */}
@@ -128,7 +118,7 @@ export function InvoiceDocument({ data }: { data: InvoicePDFData }) {
               <Text style={[s.tableHeaderText, { flex: 1 }]}>Description</Text>
               <Text style={[s.tableHeaderText, { width: '12%' }]}>ICD-10</Text>
               <Text style={[s.tableHeaderText, { width: '12%' }]}>Code</Text>
-              <Text style={[s.tableHeaderText, { width: '15%', textAlign: 'right' }]}>Total</Text>
+              <Text style={[s.tableHeaderText, { width: '15%', textAlign: 'right' }]}>Amount</Text>
             </View>
             {data.serviceLines.map((line, i) => (
               <View key={i} style={[s.tableRow, i % 2 === 1 ? s.tableRowAlt : {}]}>
@@ -202,10 +192,18 @@ export function InvoiceDocument({ data }: { data: InvoicePDFData }) {
           <View style={s.bankRow}><Text style={s.bankLabel}>Reference:</Text><Text style={s.bankValue}>{data.invoiceNumber} / {data.patientName}</Text></View>
         </View>
 
+        {/* Paid stamp */}
+        {data.isPaid && (
+          <View style={s.stamp}>
+            <Text style={s.stampText}>PAID</Text>
+            {data.paidAt && <Text style={s.stampDate}>{formatDate(data.paidAt)}</Text>}
+          </View>
+        )}
+
         {/* Footer */}
         <View style={s.footer} fixed>
           <Text style={s.footerText}>
-            {PRACTICE.name}, Registered Nurse and Midwife · Practice No. {PRACTICE.number} · {PRACTICE.phone} · {PRACTICE.email}
+            {PRACTICE.clinic} · {PRACTICE.phone} · {PRACTICE.email}
           </Text>
         </View>
       </Page>

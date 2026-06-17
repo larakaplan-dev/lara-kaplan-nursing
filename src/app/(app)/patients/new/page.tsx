@@ -96,11 +96,12 @@ export default function NewPatientPage() {
       num_pregnancies: '', gynae_notes: '',
       baby_name: '', baby_dob: '', place_of_birth: '', weeks_gestation: '',
       birth_weight_grams: '', mode_of_delivery: '', discharge_weight_grams: '',
-      paed_notes: '', consent_date: '', consent_name: '',
+      sex: '', paed_notes: '', consent_date: '', consent_name: '',
     },
   })
 
   const modeOfDelivery = watch('mode_of_delivery')
+  const sexValue = watch('sex')
 
   const { data: parentsData } = useQuery<{ parents: Parent[]; total: number }>({
     queryKey: ['parents', parentSearch],
@@ -157,6 +158,7 @@ export default function NewPatientPage() {
           baby_name: data.baby_name,
           baby_dob: data.baby_dob,
           place_of_birth: data.place_of_birth,
+          sex: data.sex,
           weeks_gestation: data.weeks_gestation,
           birth_weight_grams: data.birth_weight_grams,
           mode_of_delivery: data.mode_of_delivery,
@@ -339,6 +341,18 @@ export default function NewPatientPage() {
             </Field>
             <Field label="Place of Birth">
               <Input {...register('place_of_birth')} placeholder="e.g. Sandton Clinic" />
+            </Field>
+            <Field label="Sex">
+              <Select value={sexValue} onValueChange={v => setValue('sex', v === 'unspecified' ? '' : v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Not specified" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unspecified">Not specified</SelectItem>
+                  <SelectItem value="male">Male</SelectItem>
+                  <SelectItem value="female">Female</SelectItem>
+                </SelectContent>
+              </Select>
             </Field>
             <Field label="Weeks Gestation at Birth">
               <Input {...register('weeks_gestation')} type="number" step="0.1" min="20" max="45" placeholder="e.g. 38" />
