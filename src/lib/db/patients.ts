@@ -7,7 +7,11 @@ type CreatePatientInput = { parent_id: string } & Partial<Omit<Patient,
 
 type UpdatePatientInput = Partial<Omit<Patient, 'id' | 'created_at' | 'updated_at' | 'parent'>>
 
-export function listPatients(opts: {
+function escapePostgrestLike(value: string) {
+  return value.replace(/[,()%]/g, '\\$&')
+}
+
+export async function listPatients(opts: {
   search?: string
   limit?: number
   offset?: number
@@ -16,6 +20,20 @@ export function listPatients(opts: {
 } = {}) {
   const { search = '', limit = 50, offset = 0, archived = false, parent_id } = opts
   const db = createAdminClient()
+
+  // PostgREST's .or() can't mix a main-table column with an embedded
+  // resource's column in one logic tree, so matching parents is resolved
+  // as a separate lookup and folded in as a parent_id.in.(...) clause.
+  let matchingParentIds: string[] = []
+  if (search) {
+    const term = escapePostgrestLike(search)
+    const { data: matchingParents } = await db
+      .from('parents')
+      .select('id')
+      .ilike('client_name', `%${term}%`)
+    matchingParentIds = (matchingParents ?? []).map(p => p.id)
+  }
+
   let q = db
     .from('patients')
     .select(
@@ -26,7 +44,12 @@ export function listPatients(opts: {
     .range(offset, offset + limit - 1)
   q = archived ? q.not('deleted_at', 'is', null) : q.is('deleted_at', null)
   if (parent_id) q = q.eq('parent_id', parent_id)
-  if (search) q = q.or(`baby_name.ilike.%${search}%,parents.client_name.ilike.%${search}%`)
+  if (search) {
+    const term = escapePostgrestLike(search)
+    const orParts = [`baby_name.ilike.%${term}%`]
+    if (matchingParentIds.length > 0) orParts.push(`parent_id.in.(${matchingParentIds.join(',')})`)
+    q = q.or(orParts.join(','))
+  }
   return q
 }
 

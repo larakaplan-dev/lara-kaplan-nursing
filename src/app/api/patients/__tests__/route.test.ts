@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest } from 'next/server'
-import { makeClient } from '@/test-helpers/supabase-mock'
+import { makeClient, makeChain } from '@/test-helpers/supabase-mock'
 
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: vi.fn() }))
 vi.mock('@/lib/audit', () => ({ logAudit: vi.fn() }))
@@ -48,14 +48,36 @@ describe('GET /api/patients', () => {
     expect(client._chain.eq).toHaveBeenCalledWith('parent_id', PARENT_ID)
   })
 
-  it('searches by parent client_name when search param provided', async () => {
-    const client = makeClient({ data: [], error: null, count: 0 })
-    vi.mocked(createAdminClient).mockReturnValue(client as ReturnType<typeof createAdminClient>)
+  it('matches baby name directly and resolves parent name matches to a parent_id.in clause', async () => {
+    const parentsChain = makeChain({ data: [{ id: PARENT_ID }], error: null })
+    const patientsChain = makeChain({ data: [], error: null, count: 0 })
+    const client = {
+      from: vi.fn((table: string) => (table === 'parents' ? parentsChain : patientsChain)),
+    }
+    vi.mocked(createAdminClient).mockReturnValue(client as unknown as ReturnType<typeof createAdminClient>)
 
     await GET(req('http://localhost/api/patients?search=smith'))
-    expect(client._chain.or).toHaveBeenCalledWith(
-      expect.stringContaining('parents.client_name')
+
+    expect(parentsChain.ilike).toHaveBeenCalledWith('client_name', '%smith%')
+    expect(patientsChain.or).toHaveBeenCalledWith(
+      expect.stringContaining('baby_name.ilike.%smith%')
     )
+    expect(patientsChain.or).toHaveBeenCalledWith(
+      expect.stringContaining(`parent_id.in.(${PARENT_ID})`)
+    )
+  })
+
+  it('omits the parent_id.in clause when no parents match the search term', async () => {
+    const parentsChain = makeChain({ data: [], error: null })
+    const patientsChain = makeChain({ data: [], error: null, count: 0 })
+    const client = {
+      from: vi.fn((table: string) => (table === 'parents' ? parentsChain : patientsChain)),
+    }
+    vi.mocked(createAdminClient).mockReturnValue(client as unknown as ReturnType<typeof createAdminClient>)
+
+    await GET(req('http://localhost/api/patients?search=nomatch'))
+
+    expect(patientsChain.or).toHaveBeenCalledWith('baby_name.ilike.%nomatch%')
   })
 })
 
