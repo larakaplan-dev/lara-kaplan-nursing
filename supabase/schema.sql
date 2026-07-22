@@ -112,6 +112,10 @@ CREATE TABLE vaccine_catalog (
   default_price_cents INTEGER NOT NULL,
   tariff_code         TEXT NOT NULL DEFAULT '88454',
   active              BOOLEAN NOT NULL DEFAULT TRUE,
+  age_group_label     TEXT CHECK (age_group_label IS NULL OR age_group_label IN (
+                         'Birth', '6 Weeks', '10 Weeks', '14 Weeks', '6 Months', '9 Months',
+                         '12 Months', '15 Months', '18 Months', '2 Years', '6 Years', '12 Years'
+                       )),                -- schedule position; drives batch add in Vaccinations tab
   created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

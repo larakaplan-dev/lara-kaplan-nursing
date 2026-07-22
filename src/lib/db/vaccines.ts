@@ -1,9 +1,10 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { VaccineCatalog } from '@/types'
 
-type CreateVaccineInput = Omit<VaccineCatalog, 'id' | 'nappi_code' | 'icd10_code'> & {
+type CreateVaccineInput = Omit<VaccineCatalog, 'id' | 'nappi_code' | 'icd10_code' | 'age_group_label'> & {
   nappi_code?: string | null
   icd10_code?: string | null
+  age_group_label?: string | null
 }
 type UpdateVaccineInput = Partial<Omit<VaccineCatalog, 'id'>>
 
