@@ -88,7 +88,7 @@ export interface VaccineCatalog {
   default_price_cents: number
   tariff_code: string
   active: boolean
-  age_group_label: string | null
+  age_group_labels: string[]
 }
 
 export interface VaccinationRecord {

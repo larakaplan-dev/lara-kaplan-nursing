@@ -12,13 +12,11 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Plus, Pencil, Trash2, ChevronLeft } from 'lucide-react'
 import { cn, formatZAR } from '@/lib/utils'
 import { VACCINE_CATALOG_AGE_GROUPS } from '@/lib/ageGroups'
 import type { VaccineCatalog } from '@/types'
-
-const NONE = 'none'
 
 type VaccineFormData = {
   name:                string
@@ -26,16 +24,21 @@ type VaccineFormData = {
   icd10_code:          string
   default_price_rands: string
   tariff_code:         string
-  age_group_label:     string
 }
 
 export default function VaccinesAdminPage() {
   const [open, setOpen] = useState(false)
   const [editingVaccine, setEditingVaccine] = useState<VaccineCatalog | null>(null)
   const [saving, setSaving] = useState(false)
+  const [ageGroupLabels, setAgeGroupLabels] = useState<string[]>([])
   const queryClient = useQueryClient()
-  const { register, handleSubmit, reset, setValue, watch } = useForm<VaccineFormData>()
-  const ageGroupVal = watch('age_group_label')
+  const { register, handleSubmit, reset } = useForm<VaccineFormData>()
+
+  const toggleAgeGroup = (group: string) => {
+    setAgeGroupLabels(labels =>
+      labels.includes(group) ? labels.filter(l => l !== group) : [...labels, group]
+    )
+  }
 
   const { data, isLoading } = useQuery<{ vaccines: VaccineCatalog[] }>({
     queryKey: ['vaccine-catalog-admin'],
@@ -45,7 +48,8 @@ export default function VaccinesAdminPage() {
   const vaccines = data?.vaccines || []
 
   const openAdd = () => {
-    reset({ name: '', nappi_code: '', icd10_code: '', default_price_rands: '', tariff_code: '88454', age_group_label: NONE })
+    reset({ name: '', nappi_code: '', icd10_code: '', default_price_rands: '', tariff_code: '88454' })
+    setAgeGroupLabels([])
     setEditingVaccine(null)
     setOpen(true)
   }
@@ -57,8 +61,8 @@ export default function VaccinesAdminPage() {
       icd10_code:          v.icd10_code ?? '',
       default_price_rands: (v.default_price_cents / 100).toFixed(2),
       tariff_code:         v.tariff_code,
-      age_group_label:     v.age_group_label ?? NONE,
     })
+    setAgeGroupLabels(v.age_group_labels)
     setEditingVaccine(v)
     setOpen(true)
   }
@@ -77,7 +81,7 @@ export default function VaccinesAdminPage() {
         icd10_code:          formData.icd10_code || null,
         default_price_cents: Math.round(parseFloat(formData.default_price_rands) * 100),
         tariff_code:         formData.tariff_code || '88454',
-        age_group_label:     formData.age_group_label && formData.age_group_label !== NONE ? formData.age_group_label : null,
+        age_group_labels:    ageGroupLabels,
       }
 
       if (editingVaccine) {
@@ -171,14 +175,19 @@ export default function VaccinesAdminPage() {
                 <Input {...register('tariff_code')} placeholder="88454" />
               </div>
               <div className="col-span-2 space-y-1.5">
-                <Label className="text-xs">Age Group</Label>
-                <Select value={ageGroupVal} onValueChange={v => setValue('age_group_label', v)}>
-                  <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={NONE}>None</SelectItem>
-                    {VACCINE_CATALOG_AGE_GROUPS.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <Label className="text-xs">Age Groups</Label>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {VACCINE_CATALOG_AGE_GROUPS.map(g => (
+                    <div key={g} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`age-group-${g}`}
+                        checked={ageGroupLabels.includes(g)}
+                        onCheckedChange={() => toggleAgeGroup(g)}
+                      />
+                      <Label htmlFor={`age-group-${g}`} className="text-xs cursor-pointer font-normal">{g}</Label>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
             <Button type="submit" disabled={saving} className="w-full">
@@ -218,7 +227,7 @@ export default function VaccinesAdminPage() {
                     <td className="px-4 py-2.5 text-muted-foreground text-xs">{v.nappi_code || '—'}</td>
                     <td className="px-4 py-2.5 text-muted-foreground text-xs">{v.icd10_code || '—'}</td>
                     <td className="px-4 py-2.5 text-muted-foreground text-xs">{v.tariff_code}</td>
-                    <td className="px-4 py-2.5 text-muted-foreground text-xs">{v.age_group_label || '—'}</td>
+                    <td className="px-4 py-2.5 text-muted-foreground text-xs">{v.age_group_labels.length > 0 ? v.age_group_labels.join(', ') : '—'}</td>
                     <td className="px-4 py-2.5 text-xs">{formatZAR(v.default_price_cents)}</td>
                     <td className="px-4 py-2.5">
                       <Badge

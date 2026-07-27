@@ -8,10 +8,10 @@ import type { VaccineCatalog } from '@/types'
 const PATIENT_ID = '87654321-4321-4321-8321-210987654321'
 
 const CATALOG: VaccineCatalog[] = [
-  { id: 'v1', name: 'Rotavirus', nappi_code: 'NAPPI1', icd10_code: null, default_price_cents: 50000, tariff_code: '88454', active: true, age_group_label: '6 Weeks' },
-  { id: 'v2', name: 'DTaP',      nappi_code: 'NAPPI2', icd10_code: null, default_price_cents: 60000, tariff_code: '88454', active: true, age_group_label: '6 Weeks' },
-  { id: 'v3', name: 'MMR',       nappi_code: 'NAPPI3', icd10_code: null, default_price_cents: 70000, tariff_code: '88454', active: true, age_group_label: '9 Months' },
-  { id: 'v4', name: 'Custom Vax', nappi_code: null,     icd10_code: null, default_price_cents: 10000, tariff_code: '88454', active: true, age_group_label: null },
+  { id: 'v1', name: 'Rotavirus', nappi_code: 'NAPPI1', icd10_code: null, default_price_cents: 50000, tariff_code: '88454', active: true, age_group_labels: ['6 Weeks'] },
+  { id: 'v2', name: 'DTaP',      nappi_code: 'NAPPI2', icd10_code: null, default_price_cents: 60000, tariff_code: '88454', active: true, age_group_labels: ['6 Weeks', '10 Weeks', '14 Weeks'] },
+  { id: 'v3', name: 'MMR',       nappi_code: 'NAPPI3', icd10_code: null, default_price_cents: 70000, tariff_code: '88454', active: true, age_group_labels: ['9 Months'] },
+  { id: 'v4', name: 'Custom Vax', nappi_code: null,     icd10_code: null, default_price_cents: 10000, tariff_code: '88454', active: true, age_group_labels: [] },
 ]
 
 function wrapper() {
@@ -59,8 +59,9 @@ describe('VaccinationsTab — Add by Age Group', () => {
     await user.click(screen.getByRole('combobox'))
 
     expect(await screen.findByRole('option', { name: '6 Weeks' })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: '10 Weeks' })).toBeInTheDocument()
     expect(screen.getByRole('option', { name: '9 Months' })).toBeInTheDocument()
-    expect(screen.queryByRole('option', { name: '10 Weeks' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: 'Birth' })).not.toBeInTheDocument()
   })
 
   it('auto-populates one row per vaccine in the selected age group, pre-filled from the catalog', async () => {
@@ -74,6 +75,18 @@ describe('VaccinationsTab — Add by Age Group', () => {
     expect(await screen.findByText('Rotavirus')).toBeInTheDocument()
     expect(screen.getByText('DTaP')).toBeInTheDocument()
     expect(screen.queryByText('MMR')).not.toBeInTheDocument()
+  })
+
+  it('includes a vaccine in every age group it is assigned to (many-to-many)', async () => {
+    const user = userEvent.setup()
+    render(<VaccinationsTab patientId={PATIENT_ID} />, { wrapper: wrapper() })
+
+    await user.click(await screen.findByRole('button', { name: /add by age group/i }))
+    await user.click(screen.getByRole('combobox'))
+    await user.click(await screen.findByRole('option', { name: '10 Weeks' }))
+
+    expect(await screen.findByText('DTaP')).toBeInTheDocument()
+    expect(screen.queryByText('Rotavirus')).not.toBeInTheDocument()
   })
 
   it('allows removing a row before saving', async () => {

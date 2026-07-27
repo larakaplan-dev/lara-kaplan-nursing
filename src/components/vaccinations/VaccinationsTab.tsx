@@ -70,7 +70,7 @@ export function VaccinationsTab({ patientId }: { patientId: string }) {
     return acc
   }, {} as Record<string, VaccinationRecord[]>)
 
-  const ageGroupsWithVaccines = AGE_GROUPS.filter(g => vaccines.some(v => v.age_group_label === g))
+  const ageGroupsWithVaccines = AGE_GROUPS.filter(g => vaccines.some(v => v.age_group_labels.includes(g)))
 
   const openBatchAdd = () => {
     setBatchAgeGroup('')
@@ -82,7 +82,7 @@ export function VaccinationsTab({ patientId }: { patientId: string }) {
     setBatchAgeGroup(group)
     setBatchRows(
       vaccines
-        .filter(v => v.age_group_label === group)
+        .filter(v => v.age_group_labels.includes(group))
         .map(v => ({
           vaccineId: v.id,
           vaccineName: v.name,
