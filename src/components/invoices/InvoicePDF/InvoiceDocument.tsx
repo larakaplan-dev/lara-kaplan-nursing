@@ -183,9 +183,7 @@ export function InvoiceDocument({ data }: { data: InvoicePDFData }) {
           {data.isPaid && (
             <>
               <View style={s.totalRow}>
-                <Text style={s.totalLabel}>
-                  Total Paid{data.paidAt ? ` (${formatDate(data.paidAt)})` : ''}
-                </Text>
+                <Text style={s.totalLabel}>Total Paid</Text>
                 <Text style={s.totalValue}>{formatZAR(data.grandTotalCents)}</Text>
               </View>
               <View style={s.totalRow}>

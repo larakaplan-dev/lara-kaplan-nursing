@@ -210,9 +210,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
             {invoice.status === 'paid' && (
               <>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">
-                    Total Paid{invoice.paid_at && <> · {formatDate(invoice.paid_at)}</>}
-                  </span>
+                  <span className="text-muted-foreground">Total Paid</span>
                   <span>{formatZAR(invoice.grand_total_cents)}</span>
                 </div>
                 <div className="flex justify-between font-bold">

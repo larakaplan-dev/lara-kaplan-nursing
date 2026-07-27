@@ -37,7 +37,7 @@ export async function listPatients(opts: {
   let q = db
     .from('patients')
     .select(
-      '*, parents!parent_id(client_name, contact_number, email, medical_aid_name, medical_aid_number)',
+      '*, parent:parents!parent_id(client_name, contact_number, email, medical_aid_name, medical_aid_number)',
       { count: 'exact' },
     )
     .order('created_at', { ascending: false })
