@@ -124,8 +124,11 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
             <p className="text-sm font-semibold mt-1">{invoice.medical_aid_name || '—'}</p>
           </CardContent></Card>
           <Card><CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Total Due</p>
+            <p className="text-xs text-muted-foreground">Invoice Total</p>
             <p className="text-lg font-bold mt-0.5 text-teal-900">{formatZAR(invoice.grand_total_cents)}</p>
+            {invoice.status === 'paid' && (
+              <p className="text-xs font-medium text-emerald-700 mt-0.5">Paid in full</p>
+            )}
           </CardContent></Card>
         </div>
 
@@ -202,8 +205,19 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
               <div className="flex justify-between"><span className="text-muted-foreground">Vaccines</span><span>{formatZAR(invoice.vaccines_total_cents)}</span></div>
             )}
             <div className="border-t border-border pt-1.5 flex justify-between font-bold">
-              <span>Total Due</span><span className="text-teal-900">{formatZAR(invoice.grand_total_cents)}</span>
+              <span>Invoice Total</span><span className="text-teal-900">{formatZAR(invoice.grand_total_cents)}</span>
             </div>
+            {invoice.status === 'paid' && (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Total Paid</span>
+                  <span>{formatZAR(invoice.grand_total_cents)}</span>
+                </div>
+                <div className="flex justify-between font-bold">
+                  <span>Total Due</span><span>{formatZAR(0)}</span>
+                </div>
+              </>
+            )}
             <p className="text-xs text-muted-foreground pt-1">
               {BANKING.bank} · {BANKING.accountName} · {BANKING.accountNumber} · Branch {BANKING.branchCode}
             </p>

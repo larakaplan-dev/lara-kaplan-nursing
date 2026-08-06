@@ -115,6 +115,20 @@ CREATE TABLE vaccine_catalog (
   created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- A vaccine can belong to several schedule visits (e.g. a primary-series
+-- vaccine given at 6/10/14 Weeks) — many-to-many, drives batch add in
+-- Vaccinations tab.
+CREATE TABLE vaccine_catalog_age_groups (
+  id               UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  vaccine_id       UUID NOT NULL REFERENCES vaccine_catalog(id) ON DELETE CASCADE,
+  age_group_label  TEXT NOT NULL CHECK (age_group_label IN (
+                      'Birth', '6 Weeks', '10 Weeks', '14 Weeks', '6 Months', '9 Months',
+                      '12 Months', '15 Months', '18 Months', '2 Years', '6 Years', '12 Years'
+                    )),
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (vaccine_id, age_group_label)
+);
+
 -- ============================================================
 -- VACCINATION RECORDS
 -- ============================================================

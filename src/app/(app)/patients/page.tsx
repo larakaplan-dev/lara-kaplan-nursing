@@ -12,6 +12,11 @@ import Link from 'next/link'
 import { ageLabel, formatDate } from '@/lib/utils'
 import type { Patient } from '@/types'
 
+function parentLastName(patient: Patient): string {
+  const name = patient.parent?.client_name?.trim() ?? ''
+  return name.split(/\s+/).pop() ?? ''
+}
+
 export default function PatientsPage() {
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -100,44 +105,48 @@ export default function PatientsPage() {
       ) : (
         <Card className="overflow-hidden">
           <ul className="divide-y divide-border">
-            {data.patients.map(p => {
-              const readyForDisposal =
-                p.deleted_at && new Date(p.deleted_at) < sixYearsAgo
-              return (
-                <li key={p.id}>
-                  <Link
-                    href={`/patients/${p.id}`}
-                    className="flex items-center justify-between px-5 py-4 hover:bg-muted/30 transition-colors group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="patient-avatar w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-                      >
-                        <Baby className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold">{p.baby_name || 'Unnamed baby'}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Mom: {p.parent?.client_name}
-                          {p.baby_dob
-                            ? ` · Born ${formatDate(p.baby_dob)} · ${ageLabel(p.baby_dob)}`
-                            : ''}
-                          {p.deleted_at && ` · Archived ${formatDate(p.deleted_at)}`}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {readyForDisposal && (
-                        <Badge variant="destructive" className="text-xs">
-                          Ready for disposal
-                        </Badge>
-                      )}
-                      <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-                    </div>
-                  </Link>
-                </li>
+            {[...data.patients]
+              .sort((a, b) =>
+                parentLastName(a).localeCompare(parentLastName(b), undefined, { sensitivity: 'base' })
               )
-            })}
+              .map(p => {
+                const readyForDisposal =
+                  p.deleted_at && new Date(p.deleted_at) < sixYearsAgo
+                return (
+                  <li key={p.id}>
+                    <Link
+                      href={`/patients/${p.id}`}
+                      className="flex items-center justify-between px-5 py-4 hover:bg-muted/30 transition-colors group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="patient-avatar w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                        >
+                          <Baby className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold">{p.baby_name || 'Unnamed baby'}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Mom: {p.parent?.client_name}
+                            {p.baby_dob
+                              ? ` · Born ${formatDate(p.baby_dob)} · ${ageLabel(p.baby_dob)}`
+                              : ''}
+                            {p.deleted_at && ` · Archived ${formatDate(p.deleted_at)}`}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {readyForDisposal && (
+                          <Badge variant="destructive" className="text-xs">
+                            Ready for disposal
+                          </Badge>
+                        )}
+                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                      </div>
+                    </Link>
+                  </li>
+                )
+              })}
           </ul>
         </Card>
       )}

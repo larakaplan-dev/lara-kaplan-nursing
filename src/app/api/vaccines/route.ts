@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { logAudit } from '@/lib/audit'
 import { listVaccines, createVaccine } from '@/lib/db/vaccines'
+import { VACCINE_CATALOG_AGE_GROUPS } from '@/lib/ageGroups'
 
 const CreateVaccineSchema = z.object({
   name:                z.string().min(1, 'Name is required'),
@@ -10,6 +11,9 @@ const CreateVaccineSchema = z.object({
   default_price_cents: z.number().int().nonnegative('Price must be a non-negative integer'),
   tariff_code:         z.string().default('88454'),
   active:              z.boolean().default(true),
+  age_group_labels:    z.array(z.enum(VACCINE_CATALOG_AGE_GROUPS))
+                         .refine(labels => new Set(labels).size === labels.length, 'Age groups must be unique')
+                         .default([]),
 })
 
 export async function GET(req: NextRequest) {

@@ -177,9 +177,21 @@ export function InvoiceDocument({ data }: { data: InvoicePDFData }) {
           )}
           <View style={s.divider} />
           <View style={s.totalRow}>
-            <Text style={s.grandTotalLabel}>TOTAL DUE</Text>
-            <Text style={s.grandTotalValue}>{formatZAR(data.grandTotalCents)}</Text>
+            <Text style={data.isPaid ? s.totalLabel : s.grandTotalLabel}>INVOICE TOTAL</Text>
+            <Text style={data.isPaid ? s.totalValue : s.grandTotalValue}>{formatZAR(data.grandTotalCents)}</Text>
           </View>
+          {data.isPaid && (
+            <>
+              <View style={s.totalRow}>
+                <Text style={s.totalLabel}>Total Paid</Text>
+                <Text style={s.totalValue}>{formatZAR(data.grandTotalCents)}</Text>
+              </View>
+              <View style={s.totalRow}>
+                <Text style={s.grandTotalLabel}>TOTAL DUE</Text>
+                <Text style={s.grandTotalValue}>{formatZAR(0)}</Text>
+              </View>
+            </>
+          )}
         </View>
 
         {/* Banking */}

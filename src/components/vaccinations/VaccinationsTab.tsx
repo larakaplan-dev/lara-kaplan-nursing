@@ -12,23 +12,36 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
-import { Plus, CheckCircle2, Circle, Trash2, Pencil } from 'lucide-react'
+import { Plus, CheckCircle2, Circle, Trash2, Pencil, X } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { formatDate } from '@/lib/utils'
+import { AGE_GROUPS } from '@/lib/ageGroups'
 import type { VaccinationRecord, VaccineCatalog, VaccinationFormData } from '@/types'
 
-const AGE_GROUPS = [
-  'Birth', '6 Weeks', '10 Weeks', '14 Weeks', '6 Months', '9 Months',
-  '12 Months', '15 Months', '18 Months', '2 Years', '6 Years', '12 Years', 'Other'
-]
-
 const SITES = ['Left Thigh', 'Right Thigh', 'Left Arm', 'Right Arm', 'Oral']
+
+type BatchRow = {
+  vaccineId: string
+  vaccineName: string
+  nappiCode: string | null
+  priceCents: number | null
+  administeredDate: string
+  batchNumber: string
+  expiryDate: string
+  site: string
+  thirdParty: boolean
+  thirdPartyNotes: string
+}
 
 export function VaccinationsTab({ patientId }: { patientId: string }) {
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [selectedVaccine, setSelectedVaccine] = useState<VaccineCatalog | null>(null)
   const [editingRecord, setEditingRecord] = useState<VaccinationRecord | null>(null)
+  const [batchOpen, setBatchOpen] = useState(false)
+  const [batchAgeGroup, setBatchAgeGroup] = useState('')
+  const [batchRows, setBatchRows] = useState<BatchRow[]>([])
+  const [batchSaving, setBatchSaving] = useState(false)
   const queryClient = useQueryClient()
   const { register, handleSubmit, reset, setValue, watch } = useForm<VaccinationFormData>()
 
@@ -56,6 +69,100 @@ export function VaccinationsTab({ patientId }: { patientId: string }) {
     acc[group] = records.filter(r => r.age_group_label === group)
     return acc
   }, {} as Record<string, VaccinationRecord[]>)
+
+  const ageGroupsWithVaccines = AGE_GROUPS.filter(g => vaccines.some(v => v.age_group_labels.includes(g)))
+
+  const openBatchAdd = () => {
+    setBatchAgeGroup('')
+    setBatchRows([])
+    setBatchOpen(true)
+  }
+
+  const onSelectBatchAgeGroup = (group: string) => {
+    setBatchAgeGroup(group)
+    setBatchRows(
+      vaccines
+        .filter(v => v.age_group_labels.includes(group))
+        .map(v => ({
+          vaccineId: v.id,
+          vaccineName: v.name,
+          nappiCode: v.nappi_code,
+          priceCents: v.default_price_cents,
+          administeredDate: format(new Date(), 'yyyy-MM-dd'),
+          batchNumber: '',
+          expiryDate: '',
+          site: '',
+          thirdParty: false,
+          thirdPartyNotes: '',
+        }))
+    )
+  }
+
+  const updateBatchRow = (vaccineId: string, patch: Partial<BatchRow>) => {
+    setBatchRows(rows => rows.map(r => (r.vaccineId === vaccineId ? { ...r, ...patch } : r)))
+  }
+
+  const removeBatchRow = (vaccineId: string) => {
+    setBatchRows(rows => rows.filter(r => r.vaccineId !== vaccineId))
+  }
+
+  const handleBatchDialogClose = (v: boolean) => {
+    setBatchOpen(v)
+    if (!v) {
+      setBatchAgeGroup('')
+      setBatchRows([])
+    }
+  }
+
+  const onSaveBatch = async () => {
+    setBatchSaving(true)
+    try {
+      const results = await Promise.all(
+        batchRows.map(async row => {
+          const body = {
+            vaccine_id:                  row.vaccineId,
+            vaccine_name:                row.vaccineName,
+            age_group_label:             batchAgeGroup,
+            administered_date:           row.administeredDate,
+            batch_number:                row.batchNumber || null,
+            expiry_date:                 row.expiryDate || null,
+            site:                        row.site || null,
+            nappi_code:                  row.nappiCode,
+            price_cents:                 row.priceCents,
+            administered_by_third_party: row.thirdParty,
+            third_party_notes:           row.thirdPartyNotes || null,
+          }
+          const res = await fetch(`/api/patients/${patientId}/vaccinations`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          })
+          return { row, ok: res.ok }
+        })
+      )
+
+      const failed = results.filter(r => !r.ok).map(r => r.row)
+      const succeededCount = results.length - failed.length
+
+      if (succeededCount > 0) {
+        queryClient.invalidateQueries({ queryKey: ['vaccinations', patientId] })
+      }
+
+      if (failed.length === 0) {
+        toast.success(`${succeededCount} vaccination${succeededCount === 1 ? '' : 's'} recorded`)
+        setBatchOpen(false)
+        setBatchAgeGroup('')
+        setBatchRows([])
+      } else {
+        setBatchRows(failed)
+        toast.error(
+          `${succeededCount} of ${results.length} recorded. Failed: ${failed.map(f => f.vaccineName).join(', ')}`
+        )
+      }
+    } finally {
+      setBatchSaving(false)
+    }
+  }
 
   const openAdd = () => {
     reset({ administered_date: format(new Date(), 'yyyy-MM-dd'), administered_by_third_party: false, third_party_notes: '' })
@@ -171,9 +278,14 @@ export function VaccinationsTab({ patientId }: { patientId: string }) {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-sm font-semibold">Vaccination Records</h3>
-        <Button size="sm" onClick={openAdd}>
-          <Plus className="w-4 h-4 mr-1" /> Record Vaccine
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={openBatchAdd}>
+            <Plus className="w-4 h-4 mr-1" /> Add by Age Group
+          </Button>
+          <Button size="sm" onClick={openAdd}>
+            <Plus className="w-4 h-4 mr-1" /> Record Vaccine
+          </Button>
+        </div>
       </div>
 
       <Dialog open={open} onOpenChange={handleDialogClose}>
@@ -266,6 +378,133 @@ export function VaccinationsTab({ patientId }: { patientId: string }) {
               {saving ? 'Saving…' : editingRecord ? 'Save Changes' : 'Record Vaccination'}
             </Button>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={batchOpen} onOpenChange={handleBatchDialogClose}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Add Vaccines by Age Group</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 mt-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Age Group</Label>
+              <Select value={batchAgeGroup || undefined} onValueChange={onSelectBatchAgeGroup}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select age group…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ageGroupsWithVaccines.map(g => (
+                    <SelectItem key={g} value={g}>{g}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {batchRows.length > 0 && (
+              <div className="space-y-3 max-h-[50vh] overflow-y-auto">
+                {batchRows.map(row => (
+                  <Card key={row.vaccineId} data-testid="batch-row">
+                    <CardContent className="p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">{row.vaccineName}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeBatchRow(row.vaccineId)}
+                          className="text-muted-foreground hover:text-destructive transition-colors"
+                          title="Remove"
+                          aria-label={`Remove ${row.vaccineName}`}
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Date Given</Label>
+                          <Input
+                            type="date"
+                            value={row.administeredDate}
+                            onChange={e => updateBatchRow(row.vaccineId, { administeredDate: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Batch Number</Label>
+                          <Input
+                            value={row.batchNumber}
+                            placeholder="Batch #"
+                            onChange={e => updateBatchRow(row.vaccineId, { batchNumber: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Expiry Date</Label>
+                          <Input
+                            type="date"
+                            value={row.expiryDate}
+                            onChange={e => updateBatchRow(row.vaccineId, { expiryDate: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Site</Label>
+                          <Select
+                            value={row.site || undefined}
+                            onValueChange={v => updateBatchRow(row.vaccineId, { site: v })}
+                          >
+                            <SelectTrigger><SelectValue placeholder="Site…" /></SelectTrigger>
+                            <SelectContent>
+                              {SITES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">NAPPI Code</Label>
+                          <Input
+                            value={row.nappiCode ?? ''}
+                            placeholder="NAPPI"
+                            onChange={e => updateBatchRow(row.vaccineId, { nappiCode: e.target.value || null })}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Price (cents)</Label>
+                          <Input
+                            type="number"
+                            value={row.priceCents ?? ''}
+                            placeholder="e.g. 75000"
+                            onChange={e => updateBatchRow(row.vaccineId, { priceCents: e.target.value ? parseInt(e.target.value) : null })}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id={`third-party-${row.vaccineId}`}
+                          checked={row.thirdParty}
+                          onCheckedChange={v => updateBatchRow(row.vaccineId, { thirdParty: !!v })}
+                        />
+                        <Label htmlFor={`third-party-${row.vaccineId}`} className="text-xs cursor-pointer">
+                          Administered by third party
+                        </Label>
+                      </div>
+                      {row.thirdParty && (
+                        <Input
+                          value={row.thirdPartyNotes}
+                          placeholder="e.g. Given by Dr Smith at City Clinic"
+                          onChange={e => updateBatchRow(row.vaccineId, { thirdPartyNotes: e.target.value })}
+                        />
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            <Button
+              type="button"
+              disabled={batchSaving || batchRows.length === 0}
+              className="w-full"
+              onClick={onSaveBatch}
+            >
+              {batchSaving ? 'Saving…' : 'Save All'}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 

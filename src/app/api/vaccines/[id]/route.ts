@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { logAudit } from '@/lib/audit'
 import { updateVaccine, deleteVaccine } from '@/lib/db/vaccines'
+import { VACCINE_CATALOG_AGE_GROUPS } from '@/lib/ageGroups'
 
 const UUID = z.string().uuid()
 
@@ -12,6 +13,9 @@ const UpdateVaccineSchema = z.object({
   default_price_cents: z.number().int().nonnegative().optional(),
   tariff_code:         z.string().optional(),
   active:              z.boolean().optional(),
+  age_group_labels:    z.array(z.enum(VACCINE_CATALOG_AGE_GROUPS))
+                         .refine(labels => new Set(labels).size === labels.length, 'Age groups must be unique')
+                         .optional(),
 })
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
