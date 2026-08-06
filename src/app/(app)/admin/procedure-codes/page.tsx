@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { toast } from 'sonner'
 import { TopBar } from '@/components/layout/TopBar'
 import { Button } from '@/components/ui/button'
@@ -11,6 +11,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+
+const PROCEDURE_CODE_CATEGORIES = ['consultation', 'immunisation'] as const
 import { Plus, Pencil, Trash2, ChevronLeft } from 'lucide-react'
 import { formatZAR } from '@/lib/utils'
 import type { ProcedureCode } from '@/types'
@@ -27,7 +30,7 @@ export default function ProcedureCodesAdminPage() {
   const [editingCode, setEditingCode] = useState<ProcedureCode | null>(null)
   const [saving, setSaving] = useState(false)
   const queryClient = useQueryClient()
-  const { register, handleSubmit, reset } = useForm<ProcedureCodeFormData>()
+  const { register, handleSubmit, reset, control } = useForm<ProcedureCodeFormData>()
 
   const { data, isLoading } = useQuery<{ codes: ProcedureCode[] }>({
     queryKey: ['procedure-codes-admin'],
@@ -135,7 +138,23 @@ export default function ProcedureCodesAdminPage() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Category <span className="text-destructive">*</span></Label>
-                <Input {...register('category', { required: true })} placeholder="consultation" />
+                <Controller
+                  name="category"
+                  control={control}
+                  rules={{ required: true }}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className="text-xs h-9 w-full">
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PROCEDURE_CODE_CATEGORIES.map(cat => (
+                          <SelectItem key={cat} value={cat} className="text-xs">{cat}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
             </div>
             <div className="space-y-1.5">

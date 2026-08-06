@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import React from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { InvoiceBuilder } from '@/components/invoices/InvoiceForm'
+import { InvoiceBuilder, isInvoiceableServiceCategory } from '@/components/invoices/InvoiceForm'
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -21,9 +21,9 @@ function jsonResponse(data: unknown) {
   return Promise.resolve({ ok: true, json: () => Promise.resolve(data) })
 }
 
-function makeFetchMock() {
+function makeFetchMock(codes: unknown[] = []) {
   return vi.fn().mockImplementation((url: string) => {
-    if (url.includes('/api/procedure-codes')) return jsonResponse({ codes: [] })
+    if (url.includes('/api/procedure-codes')) return jsonResponse({ codes })
     if (url.includes('/api/vaccines')) return jsonResponse({ vaccines: [] })
     if (url.includes('/api/parents')) return jsonResponse({ parents: [] })
     return jsonResponse({})
@@ -86,5 +86,25 @@ describe('InvoiceBuilder — service line price', () => {
     // the end of "X.00" and subsequent digits append there, mangling the value.
     // The correct result is R 350.00, not something like R 3.50 or R 3 501.00.
     expect(screen.getAllByText('R 350.00').length).toBeGreaterThanOrEqual(1)
+  })
+})
+
+describe('isInvoiceableServiceCategory', () => {
+  it('matches the canonical lowercase categories', () => {
+    expect(isInvoiceableServiceCategory('consultation')).toBe(true)
+    expect(isInvoiceableServiceCategory('immunisation')).toBe(true)
+  })
+
+  it('matches regardless of case or surrounding whitespace', () => {
+    // Real production data has "Consultation" and "Immunisation" (capitalized)
+    // entered via the free-text admin category field — these must still match.
+    expect(isInvoiceableServiceCategory('Consultation')).toBe(true)
+    expect(isInvoiceableServiceCategory('Immunisation')).toBe(true)
+    expect(isInvoiceableServiceCategory('  consultation  ')).toBe(true)
+  })
+
+  it('rejects unrelated categories', () => {
+    expect(isInvoiceableServiceCategory('vaccine')).toBe(false)
+    expect(isInvoiceableServiceCategory('clinic consultation')).toBe(false)
   })
 })
