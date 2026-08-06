@@ -22,6 +22,11 @@ import { cn } from '@/lib/utils'
 
 const PDFDownloadButton = dynamic(() => import('./PDFDownloadButton'), { ssr: false })
 
+export function isInvoiceableServiceCategory(category: string): boolean {
+  const normalized = category.trim().toLowerCase()
+  return normalized === 'consultation' || normalized === 'immunisation'
+}
+
 const ICD10_DEFAULTS: Record<string, string> = {
   '88005': 'Z00.1', '88006': 'Z00.1', '88001': 'Z00.1', '88002': 'Z00.1',
   '88420': 'Z34.9', '88421': 'Z39.1', '88450': 'Z00.1', '88452': 'Z27.9',
@@ -87,7 +92,7 @@ export function InvoiceBuilder({ preselectedPatientId }: InvoiceBuilderProps) {
 
   const parents = parentsData?.parents || []
   const children = childrenData?.patients || []
-  const codes = (codesData?.codes || []).filter(c => c.category === 'consultation' || c.category === 'immunisation')
+  const codes = (codesData?.codes || []).filter(c => isInvoiceableServiceCategory(c.category))
   const vaccines = vaccinesData?.vaccines || []
 
   const selectedParent = parents.find(p => p.id === parentId) ?? preselectedPatientData?.patient?.parent ?? null
