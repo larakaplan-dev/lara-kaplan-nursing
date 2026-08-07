@@ -29,13 +29,13 @@ describe('splitOcrFields', () => {
       client_name: 'Jane Smith',
       contact_number: '082 555 1234',
       baby_name: 'Baby Smith',
-      birth_weight_grams: '3200',
+      birth_weight_kg: '3.20',
     })
     expect(Object.keys(parentFields)).toEqual(
       expect.arrayContaining(['client_name', 'contact_number'])
     )
     expect(Object.keys(childFields)).toEqual(
-      expect.arrayContaining(['baby_name', 'birth_weight_grams'])
+      expect.arrayContaining(['baby_name', 'birth_weight_kg'])
     )
     expect(parentFields).not.toHaveProperty('baby_name')
     expect(childFields).not.toHaveProperty('client_name')
@@ -67,7 +67,7 @@ describe('splitOcrFields', () => {
   it('CHILD_KEYS covers all PatientFormData keys', () => {
     const allChildKeys = [
       'baby_name', 'baby_dob', 'place_of_birth', 'weeks_gestation',
-      'birth_weight_grams', 'mode_of_delivery', 'discharge_weight_grams',
+      'birth_weight_kg', 'mode_of_delivery', 'discharge_weight_kg',
       'paed_notes', 'consent_date', 'consent_name',
     ]
     expect(CHILD_KEYS).toEqual(expect.arrayContaining(allChildKeys))

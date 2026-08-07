@@ -62,13 +62,18 @@ function nullifyParent(obj: Record<string, string>): Record<string, unknown> {
   return out
 }
 
+const KG_TO_GRAMS_FIELDS: Record<string, string> = {
+  birth_weight_kg: 'birth_weight_grams',
+  discharge_weight_kg: 'discharge_weight_grams',
+}
+
 function nullifyPatient(obj: Record<string, string>): Record<string, unknown> {
   const out: Record<string, unknown> = {}
   for (const [k, v] of Object.entries(obj)) {
-    if (v === '' || v === null || v === undefined) {
+    if (k in KG_TO_GRAMS_FIELDS) {
+      out[KG_TO_GRAMS_FIELDS[k]] = v === '' ? null : Math.round(parseFloat(v) * 1000) || null
+    } else if (v === '' || v === null || v === undefined) {
       out[k] = null
-    } else if (['birth_weight_grams', 'discharge_weight_grams'].includes(k)) {
-      out[k] = parseInt(v) || null
     } else if (k === 'weeks_gestation') {
       out[k] = parseFloat(v) || null
     } else {
@@ -95,7 +100,7 @@ export default function NewPatientPage() {
       main_member_name: '', main_member_id: '', maternal_history: '', num_children: '',
       num_pregnancies: '', gynae_notes: '',
       baby_name: '', baby_dob: '', place_of_birth: '', weeks_gestation: '',
-      birth_weight_grams: '', mode_of_delivery: '', discharge_weight_grams: '',
+      birth_weight_kg: '', mode_of_delivery: '', discharge_weight_kg: '',
       sex: '', paed_notes: '', consent_date: '', consent_name: '',
     },
   })
@@ -160,9 +165,9 @@ export default function NewPatientPage() {
           place_of_birth: data.place_of_birth,
           sex: data.sex,
           weeks_gestation: data.weeks_gestation,
-          birth_weight_grams: data.birth_weight_grams,
+          birth_weight_kg: data.birth_weight_kg,
           mode_of_delivery: data.mode_of_delivery,
-          discharge_weight_grams: data.discharge_weight_grams,
+          discharge_weight_kg: data.discharge_weight_kg,
           paed_notes: data.paed_notes,
           consent_date: data.consent_date,
           consent_name: data.consent_name,
@@ -369,11 +374,11 @@ export default function NewPatientPage() {
                 </SelectContent>
               </Select>
             </Field>
-            <Field label="Weight at Birth (grams)">
-              <Input {...register('birth_weight_grams')} type="number" min="0" placeholder="e.g. 3200" />
+            <Field label="Weight at Birth (kg)">
+              <Input {...register('birth_weight_kg')} type="number" step="0.01" min="0" placeholder="e.g. 3.20" />
             </Field>
-            <Field label="Discharge Weight (grams)">
-              <Input {...register('discharge_weight_grams')} type="number" min="0" placeholder="e.g. 3050" />
+            <Field label="Discharge Weight (kg)">
+              <Input {...register('discharge_weight_kg')} type="number" step="0.01" min="0" placeholder="e.g. 3.05" />
             </Field>
             <div className="sm:col-span-2">
               <Field label="Paed Notes">

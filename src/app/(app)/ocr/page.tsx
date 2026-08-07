@@ -43,8 +43,8 @@ const CHILD_FIELD_META: Array<{ key: keyof PatientFormData; label: string; type?
   { key: 'place_of_birth', label: 'Place of Birth' },
   { key: 'weeks_gestation', label: 'Weeks Gestation' },
   { key: 'mode_of_delivery', label: 'Mode of Delivery' },
-  { key: 'birth_weight_grams', label: 'Birth Weight (grams)' },
-  { key: 'discharge_weight_grams', label: 'Discharge Weight (grams)' },
+  { key: 'birth_weight_kg', label: 'Birth Weight (kg)', type: 'number' },
+  { key: 'discharge_weight_kg', label: 'Discharge Weight (kg)', type: 'number' },
   { key: 'paed_notes', label: 'Paediatrician Notes' },
   { key: 'consent_date', label: 'Consent Date', type: 'date' },
   { key: 'consent_name', label: 'Consenting Person Name' },
@@ -170,7 +170,7 @@ export default function OCRPage() {
 
   const updateGrowth = (idx: number, field: keyof OcrGrowthEntry, value: string) => {
     setGrowthEntries(prev => prev.map((e, i) =>
-      i === idx ? { ...e, [field]: field.endsWith('_grams') || field.endsWith('_cm') ? (parseFloat(value) || null) : value } : e
+      i === idx ? { ...e, [field]: field.endsWith('_kg') || field.endsWith('_cm') ? (parseFloat(value) || null) : value } : e
     ))
   }
 
@@ -418,7 +418,7 @@ export default function OCRPage() {
                         Growth Measurements ({growthEntries.length})
                       </CardTitle>
                       <Button variant="outline" size="sm" onClick={() => setGrowthEntries(prev => [...prev, {
-                        measurement_date: '', age_label: '', weight_grams: null, length_cm: null, head_circumference_cm: null, notes: ''
+                        measurement_date: '', age_label: '', weight_kg: null, length_cm: null, head_circumference_cm: null, notes: ''
                       }])}>+ Add row</Button>
                     </div>
                   </CardHeader>
@@ -437,12 +437,12 @@ export default function OCRPage() {
                           </button>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
-                          {(['measurement_date', 'age_label', 'weight_grams', 'length_cm', 'head_circumference_cm', 'notes'] as const).map(field => (
+                          {(['measurement_date', 'age_label', 'weight_kg', 'length_cm', 'head_circumference_cm', 'notes'] as const).map(field => (
                             <div key={field}>
                               <Label className="text-xs capitalize">{field.replace(/_/g, ' ')}</Label>
                               <Input
-                                type={field === 'measurement_date' ? 'date' : field.endsWith('_grams') || field.endsWith('_cm') ? 'number' : 'text'}
-                                step={field.endsWith('_cm') ? '0.1' : undefined}
+                                type={field === 'measurement_date' ? 'date' : field.endsWith('_kg') || field.endsWith('_cm') ? 'number' : 'text'}
+                                step={field.endsWith('_kg') ? '0.01' : field.endsWith('_cm') ? '0.1' : undefined}
                                 value={entry[field] ?? ''}
                                 onChange={e => updateGrowth(idx, field, e.target.value)}
                                 placeholder={field === 'age_label' ? 'e.g. 6 weeks' : 'optional'}

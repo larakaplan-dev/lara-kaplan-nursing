@@ -23,13 +23,18 @@ function coerceParentBody(fields: Partial<ParentFormData>): Record<string, unkno
   return body
 }
 
+const KG_TO_GRAMS_FIELDS: Record<string, string> = {
+  birth_weight_kg: 'birth_weight_grams',
+  discharge_weight_kg: 'discharge_weight_grams',
+}
+
 function coerceChildBody(fields: Partial<PatientFormData>): Record<string, unknown> {
   const body: Record<string, unknown> = {}
   for (const [k, v] of Object.entries(fields)) {
-    if (!v || v === '') {
+    if (k in KG_TO_GRAMS_FIELDS) {
+      body[KG_TO_GRAMS_FIELDS[k]] = v ? Math.round(parseFloat(v as string) * 1000) || null : null
+    } else if (!v || v === '') {
       body[k] = null
-    } else if (['birth_weight_grams', 'discharge_weight_grams'].includes(k)) {
-      body[k] = parseInt(v as string) || null
     } else if (k === 'weeks_gestation') {
       body[k] = parseFloat(v as string) || null
     } else {
@@ -76,7 +81,7 @@ export async function saveOcrResults({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         measurement_date: entry.measurement_date,
-        weight_grams: entry.weight_grams,
+        weight_grams: entry.weight_kg != null ? Math.round(entry.weight_kg * 1000) : null,
         length_cm: entry.length_cm,
         head_circumference_cm: entry.head_circumference_cm,
         notes: entry.age_label

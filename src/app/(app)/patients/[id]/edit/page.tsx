@@ -12,13 +12,18 @@ import { Button } from '@/components/ui/button'
 import { ChevronLeft } from 'lucide-react'
 import type { Patient, PatientFormData } from '@/types'
 
+const KG_TO_GRAMS_FIELDS: Record<string, string> = {
+  birth_weight_kg: 'birth_weight_grams',
+  discharge_weight_kg: 'discharge_weight_grams',
+}
+
 function nullifyPatient(obj: Record<string, string>): Record<string, unknown> {
   const out: Record<string, unknown> = {}
   for (const [k, v] of Object.entries(obj)) {
-    if (v === '' || v === null || v === undefined) {
+    if (k in KG_TO_GRAMS_FIELDS) {
+      out[KG_TO_GRAMS_FIELDS[k]] = v === '' ? null : Math.round(parseFloat(v) * 1000) || null
+    } else if (v === '' || v === null || v === undefined) {
       out[k] = null
-    } else if (['birth_weight_grams', 'discharge_weight_grams'].includes(k)) {
-      out[k] = parseInt(v) || null
     } else if (k === 'weeks_gestation') {
       out[k] = parseFloat(v) || null
     } else {

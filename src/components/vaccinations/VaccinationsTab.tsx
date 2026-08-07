@@ -182,7 +182,7 @@ export function VaccinationsTab({ patientId }: { patientId: string }) {
       expiry_date:                 record.expiry_date ?? '',
       site:                        record.site ?? '',
       nappi_code:                  record.nappi_code ?? '',
-      price_cents:                 record.price_cents?.toString() ?? '',
+      price_rands:                 record.price_cents != null ? (record.price_cents / 100).toFixed(2) : '',
       administered_by_third_party: record.administered_by_third_party,
       third_party_notes:           record.third_party_notes ?? '',
     })
@@ -202,7 +202,7 @@ export function VaccinationsTab({ patientId }: { patientId: string }) {
       setValue('vaccine_id', v.id)
       setValue('vaccine_name', v.name)
       setValue('nappi_code', v.nappi_code || '')
-      setValue('price_cents', v.default_price_cents.toString())
+      setValue('price_rands', (v.default_price_cents / 100).toFixed(2))
     }
   }
 
@@ -218,7 +218,7 @@ export function VaccinationsTab({ patientId }: { patientId: string }) {
         expiry_date:                 formData.expiry_date || null,
         site:                        formData.site || null,
         nappi_code:                  formData.nappi_code || null,
-        price_cents:                 formData.price_cents ? parseInt(formData.price_cents) : null,
+        price_cents:                 formData.price_rands ? Math.round(parseFloat(formData.price_rands) * 100) : null,
         administered_by_third_party: formData.administered_by_third_party ?? false,
         third_party_notes:           formData.third_party_notes || null,
       }
@@ -352,8 +352,8 @@ export function VaccinationsTab({ patientId }: { patientId: string }) {
                 <Input {...register('nappi_code')} placeholder="NAPPI" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Price (cents)</Label>
-                <Input {...register('price_cents')} type="number" placeholder="e.g. 75000" />
+                <Label className="text-xs">Price (R)</Label>
+                <Input {...register('price_rands')} type="number" step="0.01" min="0" placeholder="e.g. 750.00" />
               </div>
             </div>
 
@@ -464,12 +464,16 @@ export function VaccinationsTab({ patientId }: { patientId: string }) {
                           />
                         </div>
                         <div className="space-y-1">
-                          <Label className="text-xs">Price (cents)</Label>
+                          <Label className="text-xs">Price (R)</Label>
                           <Input
                             type="number"
-                            value={row.priceCents ?? ''}
-                            placeholder="e.g. 75000"
-                            onChange={e => updateBatchRow(row.vaccineId, { priceCents: e.target.value ? parseInt(e.target.value) : null })}
+                            step="0.01"
+                            min="0"
+                            value={row.priceCents != null ? (row.priceCents / 100).toFixed(2) : ''}
+                            placeholder="e.g. 750.00"
+                            onChange={e => updateBatchRow(row.vaccineId, {
+                              priceCents: e.target.value ? Math.round(parseFloat(e.target.value) * 100) : null,
+                            })}
                           />
                         </div>
                       </div>

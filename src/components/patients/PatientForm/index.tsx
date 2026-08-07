@@ -48,9 +48,9 @@ export function PatientForm({ defaultValues, onSubmit, isLoading, patient }: Pat
       baby_dob: patient?.baby_dob ?? '',
       place_of_birth: patient?.place_of_birth ?? '',
       weeks_gestation: patient?.weeks_gestation?.toString() ?? '',
-      birth_weight_grams: patient?.birth_weight_grams?.toString() ?? '',
+      birth_weight_kg: patient?.birth_weight_grams != null ? (patient.birth_weight_grams / 1000).toFixed(2) : '',
       mode_of_delivery: patient?.mode_of_delivery ?? '',
-      discharge_weight_grams: patient?.discharge_weight_grams?.toString() ?? '',
+      discharge_weight_kg: patient?.discharge_weight_grams != null ? (patient.discharge_weight_grams / 1000).toFixed(2) : '',
       sex: patient?.sex ?? '',
       paed_notes: patient?.paed_notes ?? '',
       consent_date: patient?.consent_date ?? '',
@@ -106,11 +106,11 @@ export function PatientForm({ defaultValues, onSubmit, isLoading, patient }: Pat
               </SelectContent>
             </Select>
           </Field>
-          <Field label="Weight at Birth (grams)">
-            <Input {...register('birth_weight_grams')} type="number" min="0" placeholder="e.g. 3200" />
+          <Field label="Weight at Birth (kg)">
+            <Input {...register('birth_weight_kg')} type="number" step="0.01" min="0" placeholder="e.g. 3.20" />
           </Field>
-          <Field label="Discharge Weight (grams)">
-            <Input {...register('discharge_weight_grams')} type="number" min="0" placeholder="e.g. 3050" />
+          <Field label="Discharge Weight (kg)">
+            <Input {...register('discharge_weight_kg')} type="number" step="0.01" min="0" placeholder="e.g. 3.05" />
           </Field>
           <div className="sm:col-span-2">
             <Field label="Paed Notes">

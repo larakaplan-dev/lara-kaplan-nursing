@@ -70,7 +70,7 @@ describe('extractAllFields', () => {
 
     // Growth data routed from page 2
     expect(growthEntries.length).toBeGreaterThan(0)
-    expect(growthEntries[0].weight_grams).toBe(4500)
+    expect(growthEntries[0].weight_kg).toBe(4.5)
 
     // Vaccination data routed from page 4
     expect(vaccinations.length).toBeGreaterThan(0)
@@ -95,7 +95,7 @@ describe('extractGrowthData', () => {
     const entries = extractGrowthData(text)
 
     expect(entries.length).toBeGreaterThan(0)
-    expect(entries[0].weight_grams).toBe(3500)
+    expect(entries[0].weight_kg).toBe(3.5)
   })
 
   it('preserves weight already in grams', () => {
@@ -103,7 +103,7 @@ describe('extractGrowthData', () => {
     const entries = extractGrowthData(text)
 
     expect(entries.length).toBeGreaterThan(0)
-    expect(entries[0].weight_grams).toBe(4500)
+    expect(entries[0].weight_kg).toBe(4.5)
   })
 
   it('extracts age label from the measurement row', () => {

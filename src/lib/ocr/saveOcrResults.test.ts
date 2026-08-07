@@ -86,7 +86,7 @@ describe('saveOcrResults', () => {
   it('saves growth entries after patient creation', async () => {
     const growth: OcrGrowthEntry[] = [{
       measurement_date: '2026-01-01', age_label: '6 weeks',
-      weight_grams: 4000, length_cm: null, head_circumference_cm: null, notes: '',
+      weight_kg: 4, length_cm: null, head_circumference_cm: null, notes: '',
     }]
     const fetch = mockFetch([
       { ok: true, json: { parent: { id: PARENT_ID } } },
@@ -104,6 +104,9 @@ describe('saveOcrResults', () => {
 
     expect(fetch).toHaveBeenCalledTimes(3)
     expect(fetch.mock.calls[2][0]).toBe(`/api/patients/${PATIENT_ID}/growth`)
+    // The growth API stores weight in grams — kg from OCR must be converted before sending.
+    const growthBody = JSON.parse((fetch.mock.calls[2][1] as RequestInit).body as string)
+    expect(growthBody.weight_grams).toBe(4000)
   })
 
   it('saves vaccinations after patient creation', async () => {

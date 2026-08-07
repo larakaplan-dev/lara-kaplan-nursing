@@ -195,9 +195,9 @@ export type PatientFormData = {
   baby_dob: string
   place_of_birth: string
   weeks_gestation: string
-  birth_weight_grams: string
+  birth_weight_kg: string
   mode_of_delivery: string
-  discharge_weight_grams: string
+  discharge_weight_kg: string
   sex: string
   paed_notes: string
   consent_date: string
@@ -208,7 +208,7 @@ export type GrowthEntryFormData = {
   measurement_date: string
   age_weeks: string
   age_months: string
-  weight_grams: string
+  weight_kg: string
   length_cm: string
   head_circumference_cm: string
   notes: string
@@ -223,7 +223,7 @@ export type VaccinationFormData = {
   expiry_date: string
   site: string
   nappi_code: string
-  price_cents: string
+  price_rands: string
   administered_by_third_party: boolean
   third_party_notes: string
 }
@@ -300,7 +300,7 @@ export interface AuditLog {
 export type OcrGrowthEntry = {
   measurement_date: string
   age_label: string          // e.g. "6 weeks", "3 months"
-  weight_grams: number | null
+  weight_kg: number | null
   length_cm: number | null
   head_circumference_cm: number | null
   notes: string

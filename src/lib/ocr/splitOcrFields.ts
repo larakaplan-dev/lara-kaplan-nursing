@@ -9,7 +9,7 @@ export const PARENT_KEYS: ReadonlyArray<keyof ParentFormData> = [
 
 export const CHILD_KEYS: ReadonlyArray<keyof PatientFormData> = [
   'baby_name', 'baby_dob', 'place_of_birth', 'weeks_gestation',
-  'birth_weight_grams', 'mode_of_delivery', 'discharge_weight_grams',
+  'birth_weight_kg', 'mode_of_delivery', 'discharge_weight_kg',
   'paed_notes', 'consent_date', 'consent_name',
 ]
 

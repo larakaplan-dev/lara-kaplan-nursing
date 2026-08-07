@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, within, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { VaccinationsTab } from './VaccinationsTab'
@@ -148,5 +148,38 @@ describe('VaccinationsTab — Add by Age Group', () => {
 
     await user.click(await screen.findByRole('button', { name: /^record vaccine$/i }))
     expect(await screen.findByRole('heading', { name: /record vaccination/i })).toBeInTheDocument()
+  })
+
+  it('shows and submits the vaccination price in rands, not raw cents', async () => {
+    const user = userEvent.setup()
+    const calls = mockFetch()
+    render(<VaccinationsTab patientId={PATIENT_ID} />, { wrapper: wrapper() })
+
+    await user.click(await screen.findByRole('button', { name: /^record vaccine$/i }))
+    await screen.findByRole('heading', { name: /record vaccination/i })
+
+    // Selecting a catalog vaccine (default_price_cents: 50000) should populate
+    // the price field as rands ("500.00"), never the raw cents value.
+    const [vaccineSelect] = screen.getAllByRole('combobox')
+    await user.click(vaccineSelect)
+    await user.click(await screen.findByRole('option', { name: 'Rotavirus' }))
+
+    const priceInput = screen.getByPlaceholderText('e.g. 750.00')
+    expect(priceInput).toHaveValue(500)
+
+    const dateInput = document.querySelectorAll('input[type="date"]')[0] as HTMLInputElement
+    fireEvent.change(dateInput, { target: { value: '2026-01-01' } })
+    // fireEvent.submit (rather than clicking the submit button) sidesteps a
+    // jsdom-only quirk where its native step-mismatch check misfires on
+    // whole-number values with step="0.01" due to floating-point rounding.
+    const form = document.querySelector('form') as HTMLFormElement
+    fireEvent.submit(form)
+
+    const postCall = await vi.waitFor(() => {
+      const call = calls.find(c => c.method === 'POST')
+      if (!call) throw new Error('POST not made yet')
+      return call
+    })
+    expect((postCall.body as { price_cents: number }).price_cents).toBe(50000)
   })
 })

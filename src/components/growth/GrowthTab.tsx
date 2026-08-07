@@ -226,7 +226,7 @@ export function GrowthTab({ patientId, sex, dob }: GrowthTabProps) {
         measurement_date: formData.measurement_date,
         age_weeks: formData.age_weeks ? parseInt(formData.age_weeks) : null,
         age_months: formData.age_months ? parseFloat(formData.age_months) : null,
-        weight_grams: formData.weight_grams ? parseInt(formData.weight_grams) : null,
+        weight_grams: formData.weight_kg ? Math.round(parseFloat(formData.weight_kg) * 1000) : null,
         length_cm: formData.length_cm ? parseFloat(formData.length_cm) : null,
         head_circumference_cm: formData.head_circumference_cm ? parseFloat(formData.head_circumference_cm) : null,
         notes: formData.notes || null,
@@ -285,8 +285,8 @@ export function GrowthTab({ patientId, sex, dob }: GrowthTabProps) {
                   <Input {...register('age_months')} type="number" step="0.1" min="0" placeholder="e.g. 1.5" />
                 </div>
                 <div className="space-y-1.5">
-                  <UILabel className="text-xs">Weight (grams)</UILabel>
-                  <Input {...register('weight_grams')} type="number" min="0" placeholder="e.g. 4200" />
+                  <UILabel className="text-xs">Weight (kg)</UILabel>
+                  <Input {...register('weight_kg')} type="number" step="0.01" min="0" placeholder="e.g. 4.20" />
                 </div>
                 <div className="space-y-1.5">
                   <UILabel className="text-xs">Length (cm)</UILabel>

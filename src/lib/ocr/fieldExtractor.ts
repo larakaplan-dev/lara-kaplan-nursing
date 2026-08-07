@@ -134,26 +134,20 @@ export function extractPatientFields(rawText: string): PartialPatient {
     }
     if (line.match(/weight\s*at\s*birth/)) {
       const wm = next.match(/(\d+(?:[.,]\d+)?)\s*(kg|g)?/i)
-      if (wm && !fields.birth_weight_grams) {
+      if (wm && !fields.birth_weight_kg) {
         const val = parseFloat(wm[1].replace(',', '.'))
         const unit = (wm[2] || '').toLowerCase()
-        if (unit === 'kg' || (val < 20 && unit !== 'g')) {
-          fields.birth_weight_grams = String(Math.round(val * 1000))
-        } else {
-          fields.birth_weight_grams = String(Math.round(val))
-        }
+        const grams = unit === 'kg' || (val < 20 && unit !== 'g') ? val * 1000 : val
+        fields.birth_weight_kg = (grams / 1000).toFixed(2)
       }
     }
     if (line.match(/discharge\s*weight/)) {
       const wm = next.match(/(\d+(?:[.,]\d+)?)\s*(kg|g)?/i)
-      if (wm && !fields.discharge_weight_grams) {
+      if (wm && !fields.discharge_weight_kg) {
         const val = parseFloat(wm[1].replace(',', '.'))
         const unit = (wm[2] || '').toLowerCase()
-        if (unit === 'kg' || (val < 20 && unit !== 'g')) {
-          fields.discharge_weight_grams = String(Math.round(val * 1000))
-        } else {
-          fields.discharge_weight_grams = String(Math.round(val))
-        }
+        const grams = unit === 'kg' || (val < 20 && unit !== 'g') ? val * 1000 : val
+        fields.discharge_weight_kg = (grams / 1000).toFixed(2)
       }
     }
     if (line.match(/number\s*of\s*children/)) {
@@ -489,7 +483,7 @@ export function extractGrowthData(rawText: string): OcrGrowthEntry[] {
       entries.push({
         measurement_date: measurementDate,
         age_label,
-        weight_grams,
+        weight_kg: weight_grams != null ? +(weight_grams / 1000).toFixed(2) : null,
         length_cm,
         head_circumference_cm,
         notes: '',
